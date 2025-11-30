@@ -1,0 +1,62 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
+/* Umumiy body va html uchun */
+:root {
+  --transition-speed: 0.3s;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Montserrat", system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  background-color: #f5f5f5;
+  color: #242424;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--transition-speed),
+    color var(--transition-speed);
+}
+
+/* Barcha elementlarga box-sizing qo‘shamiz */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Input va button lar uchun umumiy */
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: background-color var(--transition-speed),
+    color var(--transition-speed), border var(--transition-speed);
+}
+
+/* Linklar */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Responsive font adjustment */
+@media (max-width: 600px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 601px) {
+  html {
+    font-size: 16px;
+  }
+}
