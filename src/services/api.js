@@ -1,367 +1,475 @@
+// API.js - API_BASE_URL ni to'g'ri o'rnating
 const API_BASE_URL = "";
 
-class ApiService {
+class API {
   constructor() {
-    this.accessToken = localStorage.getItem("access_token");
-    this.refreshToken = localStorage.getItem("refresh_token");
+    this.token = localStorage.getItem("authToken") || "";
   }
 
-  setAuthTokens({ access_token, refresh_token }) {
-    this.accessToken = access_token;
-    this.refreshToken = refresh_token;
-    localStorage.setItem("access_token", access_token);
-    if (refresh_token) {
-      localStorage.setItem("refresh_token", refresh_token);
-    }
-  }
-
-  clearAuth() {
-    this.accessToken = null;
-    this.refreshToken = null;
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-  }
-
-  getHeaders(isMultipart = false) {
-    const headers = {};
-    if (!isMultipart) {
-      headers["Content-Type"] = "application/json";
-    }
-    if (this.accessToken) {
-      headers["Authorization"] = `Bearer ${this.accessToken}`;
-    }
-    return headers;
-  }
-
+  // Umumiy so'rov metod
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
-    const isMultipart = options.body instanceof FormData;
 
     const config = {
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
       ...options,
-      headers: this.getHeaders(isMultipart),
     };
 
-    // If body is object and not FormData → stringify
-    if (options.body && !(options.body instanceof FormData) && !isMultipart) {
-      config.body = JSON.stringify(options.body);
+    // Token qo'shish
+    if (this.token) {
+      config.headers["Authorization"] = `Bearer ${this.token}`;
     }
 
-    let response;
     try {
-      response = await fetch(url, config);
+      console.log("Sending request to:", url);
+      const response = await fetch(url, config);
 
-      // Auto refresh token on 401
-      if (response.status === 401 && this.refreshToken) {
-        const refreshed = await this.refreshAccessToken();
-        if (refreshed) {
-          // Retry original request
-          config.headers.Authorization = `Bearer ${this.accessToken}`;
-          response = await fetch(url, config);
-        } else {
-          this.handleUnauthorized();
-          return;
-        }
+      // 401 xatosi bo'lsa
+      if (response.status === 401) {
+        this.clearToken();
+        throw new Error("Authentication failed. Please login again.");
       }
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.detail || errorData.message || `HTTP ${response.status}`
-        );
+        throw new Error(`HTTP xatolik! Status: ${response.status}`);
       }
 
-      if (response.status === 204) return null;
-      if (response.status === 201) return await response.json();
-
+      // JSON response ni olish
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         return await response.json();
+      } else {
+        return { success: true };
       }
-      return response; // for blobs, etc.
     } catch (error) {
-      console.error("API Error:", error.message);
+      console.error("API so'rov xatosi:", error);
+
+      // CORS xatosini aniqlash
+      if (
+        error.name === "TypeError" &&
+        error.message.includes("Failed to fetch")
+      ) {
+        throw new Error(
+          "CORS xatosi: Serverga ulanib bo'lmadi. Backend CORS sozlamalarini tekshiring."
+        );
+      }
+
       throw error;
     }
   }
 
-  async refreshAccessToken() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/users/token/refresh/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh: this.refreshToken }),
-      });
+  // Token ni saqlash
+  setToken(token) {
+    this.token = token;
+    localStorage.setItem("authToken", token);
+  }
 
-      if (!response.ok) return false;
-
-      const data = await response.json();
-      this.accessToken = data.access;
-      localStorage.setItem("access_token", data.access);
-      return true;
-    } catch {
-      return false;
+  // Token ni o'chirish
+  clearToken() {
+    this.token = "";
+    localStorage.removeItem("authToken");
+    // Login sahifasiga yo'naltirish
+    if (window.location.pathname !== "/") {
+      window.location.href = "/";
     }
   }
 
-  handleUnauthorized() {
-    this.clearAuth();
-    window.location.href = "/login";
+  // Token mavjudligini tekshirish
+  hasToken() {
+    return !!this.token;
   }
 
-  // Auth
+  // =============================================
+  // USERS API
+  // =============================================
+
+  // LOGIN
   async login(username, password) {
-    const data = await this.request("/users/login/", {
+    const response = await fetch(`${API_BASE_URL}/users/login/`, {
       method: "POST",
-      body: { username, password },
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, password }),
     });
-    this.setAuthTokens({
-      access_token: data.access_token,
-      refresh_token: data.refresh,
-    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Login failed: ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    // Token ni saqlash
+    if (data.access_token) {
+      // <-- access_token ishlatiladi
+      this.setToken(data.access_token);
+    }
+
     return data;
   }
 
-  async logout() {
-    if (this.refreshToken) {
-      try {
-        await this.request("/users/logout/", {
-          method: "POST",
-          body: { refresh: this.refreshToken },
-        });
-      } catch (e) {
-        console.warn("Logout failed", e);
-      }
-    }
-    this.clearAuth();
-  }
-
+  // CURRENT USER PROFILE
   async getCurrentUser() {
-    return await this.request("/users/");
+    return this.request("/users/");
   }
 
-  // Generic CRUD helpers
-  async getList(endpoint) {
-    return await this.request(endpoint);
-  }
-
-  async getOne(endpoint, id) {
-    return await this.request(`${endpoint}${id}/`);
-  }
-
-  async create(endpoint, data) {
-    return await this.request(endpoint, { method: "POST", body: data });
-  }
-
-  async update(endpoint, id, data) {
-    return await this.request(`${endpoint}${id}/`, {
-      method: "PUT",
-      body: data,
-    });
-  }
-
-  async getDirectionsWithStudents() {
+  // LOGOUT
+  async logout() {
     try {
-      // Avval yo'nalishlarni olish
-      const directions = await this.getList("/university/directions/");
-
-      // Har bir yo'nalish uchun guruhlarni olish
-      const directionsWithGroups = await Promise.all(
-        directions.map(async (direction) => {
-          try {
-            // Guruhlarni olish
-            const groups = await this.getList(
-              `/university/groups/?direction=${direction.id}`
-            );
-
-            // Har bir guruh uchun talabalar sonini hisoblash
-            const groupsWithStudentCount = await Promise.all(
-              groups.map(async (group) => {
-                try {
-                  // Talabalar ro'yxatini olish
-                  const students = await this.getList(
-                    `/university/students/?group=${group.id}`
-                  );
-                  return {
-                    ...group,
-                    students: students || [],
-                    students_count: students ? students.length : 0,
-                  };
-                } catch (error) {
-                  console.warn(
-                    `Guruh ${group.id} uchun talabalar olinmadi:`,
-                    error
-                  );
-                  return {
-                    ...group,
-                    students: [],
-                    students_count: 0,
-                  };
-                }
-              })
-            );
-
-            return {
-              ...direction,
-              groups: groupsWithStudentCount,
-              totalGroups: groupsWithStudentCount.length,
-              totalStudents: groupsWithStudentCount.reduce(
-                (sum, group) => sum + group.students_count,
-                0
-              ),
-            };
-          } catch (error) {
-            console.warn(
-              `Yo'nalish ${direction.id} uchun guruhlar olinmadi:`,
-              error
-            );
-            return {
-              ...direction,
-              groups: [],
-              totalGroups: 0,
-              totalStudents: 0,
-            };
-          }
-        })
-      );
-
-      return directionsWithGroups;
-    } catch (err) {
-      console.error("Yo'nalishlar yuklanmadi:", err);
-      throw err;
+      await this.request("/users/logout/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } finally {
+      this.clearToken();
     }
   }
 
-  // Talabalar ro'yxatini olish (guruh bo'yicha filtr)
-  async getStudentsByGroup(groupId) {
-    try {
-      return await this.getList(`/university/students/?group=${groupId}`);
-    } catch (error) {
-      console.warn(`Guruh ${groupId} uchun talabalar olinmadi:`, error);
-      return [];
-    }
-  }
-
-  // Barcha talabalar
-  async getAllStudents() {
-    try {
-      return await this.getList("/university/students/");
-    } catch (error) {
-      console.warn("Talabalar olinmadi:", error);
-      return [];
-    }
-  }
-
-  // Amaliyot kunlari
-  async getPracticeDays() {
-    try {
-      return await this.getList("/practice/practice_days/");
-    } catch (error) {
-      console.warn("Amaliyot kunlari olinmadi:", error);
-      return [];
-    }
-  }
-  async partialUpdate(endpoint, id, data) {
-    return await this.request(`${endpoint}${id}/`, {
-      method: "PATCH",
-      body: data,
-    });
-  }
-
-  async delete(endpoint, id) {
-    return await this.request(`${endpoint}${id}/`, { method: "DELETE" });
-  }
-
-  // Users
-  getUsers() {
-    return this.getList("/users/users/");
-  }
-  getUser(id) {
-    return this.getOne("/users/users/", id);
-  }
-  createUser(data) {
-    return this.create("/users/users/", data);
-  }
-  updateUser(id, data) {
-    return this.update("/users/users/", id, data);
-  }
-  deleteUser(id) {
-    return this.delete("/users/users/", id);
-  }
-
-  // University
-  getFaculties() {
-    return this.getList("/university/faculties/");
-  }
-  createFaculty(data) {
-    return this.create("/university/faculties/", data);
-  }
-  updateFaculty(id, data) {
-    return this.update("/university/faculties/", id, data);
-  }
-  deleteFaculty(id) {
-    return this.delete("/university/faculties/", id);
-  }
-
-  getDepartments() {
-    return this.getList("/university/departments/");
-  }
-  getDirections() {
-    return this.getList("/university/directions/");
-  }
-  getGroups() {
-    return this.getList("/university/groups/");
-  }
-  static getPracticeDays(url = "/practice/practice_days/") {
-    return this.get(url);
-  }
-  static async getPracticeDayById(id) {
-    return await this.getOne("/practice/practice_days/", id);
-  }
-  async getPracticeDayById(id) {
-    return await this.getOne("/practice/practice_days/", id);
-  }
-  // Practice Days
-  static async getPracticeDay(id) {
-    return await this.getOne(`/practice/practice_days/${id}/`);
-  }
-  async getPracticeDay(id) {
-    return await this.getOne("/practice/practice_days/", id);
-  }
-  getPracticeDays() {
-    return this.getList("/practice/practice_days/");
-  }
-  getPracticeDay(id) {
-    return this.getOne("/practice/practice_days/", id);
-  }
-  createPracticeDay(data) {
-    return this.create("/practice/practice_days/", data);
-  }
-  updatePracticeDay(id, data) {
-    return this.update("/practice/practice_days/", id, data);
-  }
-  partialUpdatePracticeDay(id, data) {
-    return this.partialUpdate("/practice/practice_days/", id, data);
-  }
-  deletePracticeDay(id) {
-    return this.delete("/practice/practice_days/", id);
-  }
-
-  // Reports
-  getReports() {
-    return this.getList("/practice/reports/");
-  }
-  getReport(id) {
-    return this.getOne("/practice/reports/", id);
-  }
-
-  // Special: Create report with image (multipart)
-  async createReport(formData) {
-    return await this.request("/practice/reports/", {
+  // CREATE USER (Admin only)
+  async createUser(userData) {
+    return this.request("/users/users/", {
       method: "POST",
-      body: formData, // FormData → no JSON stringify
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
+  }
+
+  // LIST USERS
+  async getUsers() {
+    return this.request("/users/users/");
+  }
+
+  // GET USER BY ID
+  async getUserById(userId) {
+    return this.request(`/users/users/${userId}/`);
+  }
+
+  // UPDATE USER (PUT)
+  async updateUser(userId, userData) {
+    return this.request(`/users/users/${userId}/`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
+  }
+
+  // PARTIAL UPDATE USER (PATCH)
+  async partialUpdateUser(userId, userData) {
+    return this.request(`/users/users/${userId}/`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
+  }
+
+  // =============================================
+  // FACULTIES API
+  // =============================================
+
+  // LIST FACULTIES
+  async getFaculties() {
+    return this.request("/university/faculties/");
+  }
+
+  // CREATE FACULTY
+  async createFaculty(facultyData) {
+    return this.request("/university/faculties/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(facultyData),
+    });
+  }
+
+  // RETRIEVE FACULTY
+  async getFaculty(facultyId) {
+    return this.request(`/university/faculties/${facultyId}/`);
+  }
+
+  // UPDATE FACULTY
+  async updateFaculty(facultyId, facultyData) {
+    return this.request(`/university/faculties/${facultyId}/`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(facultyData),
+    });
+  }
+
+  // UPDATE FACULTY PARTIAL
+  async partialUpdateFaculty(facultyId, facultyData) {
+    return this.request(`/university/faculties/${facultyId}/`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(facultyData),
+    });
+  }
+
+  // DELETE FACULTY
+  async deleteFaculty(facultyId) {
+    return this.request(`/university/faculties/${facultyId}/`, {
+      method: "DELETE",
+    });
+  }
+
+  // =============================================
+  // DEPARTMENTS API
+  // =============================================
+
+  // LIST DEPARTMENTS
+  async getDepartments() {
+    return this.request("/university/departments/");
+  }
+
+  // CREATE DEPARTMENT
+  async createDepartment(departmentData) {
+    return this.request("/university/departments/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(departmentData),
+    });
+  }
+
+  // RETRIEVE DEPARTMENT
+  async getDepartment(departmentId) {
+    return this.request(`/university/departments/${departmentId}/`);
+  }
+
+  // UPDATE DEPARTMENT
+  async updateDepartment(departmentId, departmentData) {
+    return this.request(`/university/departments/${departmentId}/`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(departmentData),
+    });
+  }
+
+  // DELETE DEPARTMENT
+  async deleteDepartment(departmentId) {
+    return this.request(`/university/departments/${departmentId}/`, {
+      method: "DELETE",
+    });
+  }
+
+  // =============================================
+  // DIRECTIONS API
+  // =============================================
+
+  // LIST DIRECTIONS
+  async getDirections() {
+    return this.request("/university/directions/");
+  }
+
+  // CREATE DIRECTION
+  async createDirection(directionData) {
+    return this.request("/university/directions/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(directionData),
+    });
+  }
+
+  // RETRIEVE DIRECTION
+  async getDirection(directionId) {
+    return this.request(`/university/directions/${directionId}/`);
+  }
+
+  // UPDATE DIRECTION
+  async updateDirection(directionId, directionData) {
+    return this.request(`/university/directions/${directionId}/`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(directionData),
+    });
+  }
+
+  // DELETE DIRECTION
+  async deleteDirection(directionId) {
+    return this.request(`/university/directions/${directionId}/`, {
+      method: "DELETE",
+    });
+  }
+
+  // =============================================
+  // GROUPS API
+  // =============================================
+
+  // LIST GROUPS
+  async getGroups() {
+    return this.request("/university/groups/");
+  }
+
+  // CREATE GROUP
+  async createGroup(groupData) {
+    return this.request("/university/groups/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(groupData),
+    });
+  }
+
+  // RETRIEVE GROUP
+  async getGroup(groupId) {
+    return this.request(`/university/groups/${groupId}/`);
+  }
+
+  // UPDATE GROUP
+  async updateGroup(groupId, groupData) {
+    return this.request(`/university/groups/${groupId}/`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(groupData),
+    });
+  }
+
+  // DELETE GROUP
+  async deleteGroup(groupId) {
+    return this.request(`/university/groups/${groupId}/`, {
+      method: "DELETE",
+    });
+  }
+
+  // =============================================
+  // PRACTICE API
+  // =============================================
+
+  // LIST PRACTICE DAYS
+  async getPracticeDays() {
+    return this.request("/practice/practice_days/");
+  }
+
+  // RETRIEVE PRACTICE DAY
+  async getPracticeDay(practiceDayId) {
+    return this.request(`/practice/practice_days/${practiceDayId}/`);
+  }
+
+  // CREATE PRACTICE DAY (ADMIN only)
+  async createPracticeDay(practiceData) {
+    return this.request("/practice/practice_days/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(practiceData),
+    });
+  }
+
+  // UPDATE PRACTICE DAY
+  async updatePracticeDay(practiceDayId, practiceData) {
+    return this.request(`/practice/practice_days/${practiceDayId}/`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(practiceData),
+    });
+  }
+
+  // PARTIAL UPDATE PRACTICE DAY
+  async partialUpdatePracticeDay(practiceDayId, practiceData) {
+    return this.request(`/practice/practice_days/${practiceDayId}/`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(practiceData),
+    });
+  }
+
+  // DELETE PRACTICE DAY
+  async deletePracticeDay(practiceDayId) {
+    return this.request(`/practice/practice_days/${practiceDayId}/`, {
+      method: "DELETE",
+    });
+  }
+
+  // =============================================
+  // REPORTS API
+  // =============================================
+
+  // LIST MY REPORTS (student only)
+  async getMyReports() {
+    return this.request("/practice/reports/");
+  }
+
+  // RETRIEVE MY SINGLE REPORT
+  async getMyReport(reportId) {
+    return this.request(`/practice/reports/${reportId}/`);
+  }
+
+  // CREATE REPORT (ONLY STUDENT) - FormData bilan
+  async createReport(formData) {
+    const url = `${API_BASE_URL}/practice/reports/`;
+
+    const config = {
+      method: "POST",
+      headers: {
+        Authorization: this.token ? `Bearer ${this.token}` : "",
+      },
+      body: formData,
+    };
+
+    try {
+      const response = await fetch(url, config);
+
+      if (!response.ok) {
+        throw new Error(`HTTP xatolik! Status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Report yaratish xatosi:", error);
+      throw error;
+    }
+  }
+
+  // UPDATE REPORT (DISALLOWED)
+  async updateReport(reportId, reportData) {
+    return this.request(`/practice/reports/${reportId}/`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reportData),
+    });
+  }
+
+  // DELETE REPORT (DISALLOWED)
+  async deleteReport(reportId) {
+    return this.request(`/practice/reports/${reportId}/`, {
+      method: "DELETE",
     });
   }
 }
 
-export default new ApiService();
+// API instansini yaratish va eksport qilish
+const api = new API();
+export default api;

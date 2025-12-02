@@ -10,6 +10,7 @@ import {
   FaChevronRight,
 } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
+import api from "../services/api.js";
 
 const slideIn = keyframes`
   from {
@@ -553,6 +554,9 @@ export default function Directions({ isDark = false }) {
   const location = useLocation();
   const [openDirections, setOpenDirections] = useState({});
   const stats = calculateStats(hodData.directions);
+  const [directions, setDirections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const toggleDirection = (directionId) => {
     setOpenDirections((prev) => ({
@@ -562,7 +566,7 @@ export default function Directions({ isDark = false }) {
   };
 
   const handleGroupClick = (groupName) => {
-    navigate(`/students`);
+    navigate(`/students/1`);
   };
 
   const handleDownload = () => {
@@ -573,7 +577,24 @@ export default function Directions({ isDark = false }) {
     link.click();
     document.body.removeChild(link);
   };
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const data = await api.getDirections();
+        setDirections(data); // API dan kelgan arrayni state ga o'rnatish
+      } catch (err) {
+        console.error("Departmentlarni olishda xato:", err);
+        setError("Departmentlarni yuklashda xato yuz berdi.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchDepartments();
+  }, []);
+
+  if (loading) return <p>Yuklanmoqda...</p>;
+  if (error) return <p>{error}</p>;
   return (
     <DashboardContainer>
       <StatsGrid>
@@ -608,38 +629,6 @@ export default function Directions({ isDark = false }) {
             </SmallStat>
           </StatContent>
         </StatCard>
-
-        <StatCard>
-          <StatContent>
-            <Statdiv>
-              <StatLabel>Talabalar</StatLabel>
-              <StatIcon bgColor="#10b981">
-                <FaUserGraduate />
-              </StatIcon>
-            </Statdiv>
-            <SmallStat>
-              <StatNumber bgColor="#10b98134" numberColor="#10b981">
-                {stats.totalStudents}
-              </StatNumber>
-            </SmallStat>
-          </StatContent>
-        </StatCard>
-
-        <StatCard>
-          <StatContent>
-            <Statdiv>
-              <StatLabel>Amaliyotlar</StatLabel>
-              <StatIcon bgColor="#f59e0b">
-                <FaSchool />
-              </StatIcon>
-            </Statdiv>
-            <SmallStat>
-              <StatNumber bgColor="#f59f0b34" numberColor="#f59e0b">
-                {stats.totalPractices}
-              </StatNumber>
-            </SmallStat>
-          </StatContent>
-        </StatCard>
       </StatsGrid>
 
       {/* Directions Section */}
@@ -658,7 +647,7 @@ export default function Directions({ isDark = false }) {
           </div>
         </HeaderRow>
 
-        {hodData.directions.map((direction) => (
+        {directions.map((direction) => (
           <DirectionRow key={direction.id}>
             <DirectionHeader onClick={() => toggleDirection(direction.id)}>
               <DirectionInfo>
@@ -667,12 +656,8 @@ export default function Directions({ isDark = false }) {
                 </DirectionIcon>
                 <DirectionContent>
                   <DirectionName>
-                    {direction.name} ({direction.code})
+                    {direction.name} ({direction.abbr})
                   </DirectionName>
-                  <DirectionMeta>
-                    {direction.totalGroups} guruh • {direction.totalStudents}{" "}
-                    talaba
-                  </DirectionMeta>
                 </DirectionContent>
               </DirectionInfo>
               <ChevronIcon isOpen={openDirections[direction.id]}>
@@ -690,11 +675,7 @@ export default function Directions({ isDark = false }) {
                     <FaUsers />
                   </GroupIcon>
                   <GroupContent>
-                    <GroupName>{group.name} guruhi</GroupName>
-                    <GroupStats>
-                      {group.studentCount} talaba • {group.activePractices} faol
-                      • {group.completedPractices} tugatilgan
-                    </GroupStats>
+                    <GroupName>{group.group_number} guruhi</GroupName>
                   </GroupContent>
                   <ChevronIcon isOpen={false}>
                     <FaChevronRight />

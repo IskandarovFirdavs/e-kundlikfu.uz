@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled, { useTheme } from "styled-components";
 import darklogo from "../../public/darklogo.png";
 import lightlogo from "../../public/logog.png";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import icon from "../../public/seticon.png";
 import darkicon from "../../public/Group.png";
-
+import api from "../services/api.js";
 // --- WRAPPER ---
 const Wrapper = styled.div`
   display: flex;
@@ -142,57 +142,37 @@ const Toggle = styled.img`
   }
 `;
 
-// --- ERROR MESSAGE ---
-const ErrorMessage = styled.div`
-  color: #ef4444;
-  font-size: 14px;
-  text-align: center;
-  padding: 10px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 6px;
-  margin-top: 10px;
-`;
-
-// --- LOADING SPINNER ---
-const LoadingSpinner = styled.div`
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 3px solid #ffffff;
-  border-radius: 50%;
-  border-top-color: transparent;
-  animation: spin 1s ease-in-out infinite;
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-// --- DEMO CREDENTIALS ---
-const DemoCredentials = styled.div`
-  margin-top: 20px;
-  padding: 15px;
-  background: ${(p) => p.theme.statCard};
-  border-radius: 8px;
-  font-size: 12px;
-
-  h4 {
-    margin: 0 0 10px 0;
-    color: ${(p) => p.theme.text};
-  }
-
-  .credential {
-    margin: 5px 0;
-    color: ${(p) => p.theme.text};
-    opacity: 0.8;
-  }
-`;
-
 // --- LOGIN COMPONENT ---
 export default function Login({ dark, setDark }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      navigate("/faculties");
+    }
+  }, [navigate]);
+
+  // Login.jsx - debug qo'shish
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const data = await api.login(username, password);
+      navigate("/faculties"); // token allaqachon api.login ichida saqlangan
+    } catch (err) {
+      setError("Login yoki parol xato");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Wrapper>
       <Title>Tizimga Kirish</Title>
@@ -207,13 +187,37 @@ export default function Login({ dark, setDark }) {
           <LogoText>ELEKTRON KUNDALIK</LogoText>
         </LogoWrapper>
 
-        <form>
+        <form onSubmit={handleLogin}>
+          {error && (
+            <p
+              style={{
+                color: "#ef4444",
+                textAlign: "center",
+                marginBottom: "15px",
+              }}
+            >
+              {error}
+            </p>
+          )}
           <Inputs>
-            <Input type="text" placeholder="username" required />
-            <Input type="password" placeholder="parol" required />
-
-            <Button type="submit">
-              <Link to="/faculties">Kirish</Link>
+            <Input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              disabled={loading}
+            />
+            <Input
+              type="password"
+              placeholder="Parol"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+            />
+            <Button type="submit" disabled={loading}>
+              {loading ? "Kirilmoqda..." : "Kirish"}
             </Button>
           </Inputs>
         </form>

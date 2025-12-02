@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import { lightTheme, darkTheme } from "../styles/theme.js";
-import {
-  FaUniversity,
-  FaUsers,
-  FaChalkboardTeacher,
-  FaUserGraduate,
-  FaChartLine,
-  FaClipboardCheck,
-} from "react-icons/fa";
+import { FaUniversity, FaUsers } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import api from "../services/api.js";
 
 const slideIn = keyframes`
   from {
@@ -184,7 +178,7 @@ const StatIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: ${(props) => props.bgColor};
+  background-color: ${(props) => props.bg};
   color: white;
   font-size: 24px;
 
@@ -279,52 +273,6 @@ const HeaderRow = styled.div`
   }
 `;
 
-const Button = styled.button`
-  background-color: ${(props) => props.theme.buttonBg};
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent
-    );
-    transition: left 0.5s ease;
-  }
-
-  &:hover::before {
-    left: 100%;
-  }
-
-  &:hover {
-    background-color: ${(props) => props.theme.buttonHover};
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px ${(props) => props.theme.buttonBg}40;
-  }
-
-  @media (max-width: 480px) {
-    padding: 10px 16px;
-    font-size: 14px;
-  }
-`;
-
 const Counter = styled.span`
   font-size: 14px;
   font-weight: 600;
@@ -337,7 +285,7 @@ const Counter = styled.span`
 
 const TableRow = styled.div`
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
   gap: 15px;
   padding: 20px;
   border-bottom: 1px solid ${(props) => props.theme.inputBorder};
@@ -397,9 +345,10 @@ const TableCell = styled.div`
 `;
 
 const MobileTableCell = styled.div`
+  width: 80%;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   font-size: 15px;
   color: ${(props) => props.theme.text};
   padding: 8px 0;
@@ -425,47 +374,10 @@ const MobileTable = styled.div`
   }
 `;
 
-const CellIcon = styled.div`
-  width: 45px;
-  height: 45px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  background-color: ${(props) => props.bgColor || "#3B82F6"};
-  color: white;
-  flex-shrink: 0;
-  font-weight: bold;
-
-  @media (max-width: 768px) {
-    width: 40px;
-    height: 40px;
-    font-size: 18px;
-  }
-
-  @media (max-width: 480px) {
-    width: 35px;
-    height: 35px;
-    font-size: 16px;
-  }
-`;
-
-const CellContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-
-  @media (max-width: 480px) {
-    gap: 2px;
-    width: 100%;
-  }
-`;
-
 const CellIconWrapper = styled.div`
   display: flex;
+  width: 15%;
   align-items: center;
-  gap: 8px;
   color: ${(props) => props.theme.text};
   font-size: 16px;
 
@@ -509,33 +421,6 @@ const CellValue = styled.span`
   }
 `;
 
-const PerformanceBadge = styled.div`
-  background-color: ${(props) => props.bgColor};
-  color: ${(props) => props.textColor};
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 14px;
-  text-align: center;
-  min-width: 90px;
-  border: 1px solid ${(props) => props.textColor}20;
-
-  @media (max-width: 860px) {
-    padding: 6px 10px;
-    font-size: 13px;
-    min-width: 80px;
-    display: none;
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px 12px;
-    font-size: 14px;
-    min-width: 90px;
-    justify-self: start;
-    margin-top: 4px;
-  }
-`;
-
 const MobileFilterDropdown = styled.select`
   display: none;
 
@@ -563,7 +448,16 @@ const MobileFilterOption = styled.option`
   color: ${(props) => props.theme.text};
   padding: 10px;
 `;
+const CellContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 
+  @media (max-width: 480px) {
+    gap: 2px;
+    width: 100%;
+  }
+`;
 // Mock data for faculties
 const facultiesData = [
   {
@@ -635,23 +529,15 @@ const getPerformanceColors = (rate) => {
   return { bg: "#f3f4f6", text: "#374151" };
 };
 
-const getStatusText = (status) => {
-  switch (status) {
-    case "active":
-      return "Faol";
-    case "inactive":
-      return "Faol emas";
-    default:
-      return "Noma'lum";
-  }
-};
-
 export default function Faculties({ isDark = false, onThemeChange }) {
   const theme = isDark ? darkTheme : lightTheme;
   const navigate = useNavigate();
   const [showNotification, setShowNotification] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [filteredData, setFilteredData] = useState(facultiesData);
+  const [faculties, setFaculties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const handleNotificationClose = () => {
     setShowNotification(false);
@@ -679,6 +565,28 @@ export default function Faculties({ isDark = false, onThemeChange }) {
     }
   }, [activeFilter]);
 
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+
+    api.setToken(token);
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await api.getFaculties();
+        setFaculties(data);
+      } catch (err) {
+        console.error("Fakultetlarni olishda xato:", err);
+        setError("Ma'lumotlarni yuklashda xatolik yuz berdi: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [navigate]);
+
   const handleMobileFilterChange = (event) => {
     setActiveFilter(event.target.value);
   };
@@ -696,7 +604,41 @@ export default function Faculties({ isDark = false, onThemeChange }) {
         facultiesData.length
     ),
   };
+  if (loading) {
+    return (
+      <DashboardContainer>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "200px",
+            color: theme.text,
+          }}
+        >
+          Yuklanmoqda...
+        </div>
+      </DashboardContainer>
+    );
+  }
 
+  if (error) {
+    return (
+      <DashboardContainer>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "200px",
+            color: "#ef4444",
+          }}
+        >
+          {error}
+        </div>
+      </DashboardContainer>
+    );
+  }
   return (
     <DashboardContainer>
       {showNotification && (
@@ -717,7 +659,7 @@ export default function Faculties({ isDark = false, onThemeChange }) {
 
       <StatsGrid>
         <StatCard>
-          <StatIcon bgColor="#3B82F6">
+          <StatIcon $bgColor="#3B82F6">
             <FaUniversity />
           </StatIcon>
           <StatContent>
@@ -728,7 +670,7 @@ export default function Faculties({ isDark = false, onThemeChange }) {
         </StatCard>
 
         <StatCard>
-          <StatIcon bgColor="#10B981">
+          <StatIcon $bgColor="#10B981">
             <FaUsers />
           </StatIcon>
           <StatContent>
@@ -737,69 +679,42 @@ export default function Faculties({ isDark = false, onThemeChange }) {
             <StatDescription>Jami kafedralar soni</StatDescription>
           </StatContent>
         </StatCard>
-
-        <StatCard>
-          <StatIcon bgColor="#F59E0B">
-            <FaUserGraduate />
-          </StatIcon>
-          <StatContent>
-            <StatLabel>Talabalar</StatLabel>
-            <StatNumber>{totalStats.students}</StatNumber>
-            <StatDescription>Jami talabalar soni</StatDescription>
-          </StatContent>
-        </StatCard>
-
-        <StatCard>
-          <StatIcon bgColor="#EF4444">
-            <FaChalkboardTeacher />
-          </StatIcon>
-          <StatContent>
-            <StatLabel>O'qituvchilar</StatLabel>
-            <StatNumber>{totalStats.teachers}</StatNumber>
-            <StatDescription>Jami o'qituvchilar soni</StatDescription>
-          </StatContent>
-        </StatCard>
       </StatsGrid>
 
       {/* Faculties Section */}
       <FacultiesSection>
         <HeaderRow>
           <SectionTitle>FAKULTETLAR RO'YXATI</SectionTitle>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              height: "100%",
-            }}
-          >
-            <Counter>
-              {filteredData.length}/{facultiesData.length}
-            </Counter>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <Counter>{faculties.length} ta</Counter>
           </div>
         </HeaderRow>
 
-        {filteredData.map((faculty, index) => {
-          const performanceColors = getPerformanceColors(faculty.performance);
-
-          return (
+        {faculties.length === 0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "40px",
+              color: theme.text,
+              opacity: 0.7,
+            }}
+          >
+            Hech qanday fakultet topilmadi
+          </div>
+        ) : (
+          faculties.map((f) => (
             <TableRow
-              key={faculty.id}
-              style={{
-                cursor: "pointer",
-              }}
-              onClick={() => navigate(`/departments?faculty=${faculty.id}`)}
+              key={f.id}
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate(`/departments?faculty=${f.id}`)}
             >
               <TableCell>
-                <CellIcon bgColor={faculty.iconColor}>{faculty.icon}</CellIcon>
                 <CellContent>
                   <CellIconWrapper>
                     <CellLabel>Fakultet</CellLabel>
                   </CellIconWrapper>
-                  <CellValue>{faculty.name}</CellValue>
-                  <CellLabel>
-                    {faculty.code} • {faculty.established}
-                  </CellLabel>
+                  <CellValue>{f.name}</CellValue>
+                  <CellValue>{f.abbr}</CellValue>
                 </CellContent>
               </TableCell>
 
@@ -809,7 +724,21 @@ export default function Faculties({ isDark = false, onThemeChange }) {
                     <FaUsers />
                     <CellLabel>Dekan</CellLabel>
                   </CellIconWrapper>
-                  <CellValue>{faculty.dean}</CellValue>
+                  <CellValue>
+                    {f.head?.first_name} {f.head?.last_name}
+                  </CellValue>
+                </CellContent>
+              </TableCell>
+
+              <TableCell>
+                <CellContent>
+                  <CellIconWrapper>
+                    <FaUsers />
+                    <CellLabel>Zam dekan</CellLabel>
+                  </CellIconWrapper>
+                  <CellValue>
+                    {f.vice?.first_name} {f.vice?.last_name}
+                  </CellValue>
                 </CellContent>
               </TableCell>
 
@@ -819,58 +748,31 @@ export default function Faculties({ isDark = false, onThemeChange }) {
                     <FaUniversity />
                     <CellLabel>Kafedralar</CellLabel>
                   </CellIconWrapper>
-                  <CellValue>{faculty.departments} ta</CellValue>
+                  <CellValue>{f.departments?.length || 0} ta</CellValue>
                 </CellContent>
               </TableCell>
 
-              <TableCell>
-                <CellContent>
-                  <CellIconWrapper>
-                    <FaUserGraduate />
-                    <CellLabel>Talabalar</CellLabel>
-                  </CellIconWrapper>
-                  <CellValue>{faculty.students} ta</CellValue>
-                </CellContent>
-              </TableCell>
-
-              <TableCell>
-                <CellContent>
-                  <CellIconWrapper>
-                    <FaChalkboardTeacher />
-                    <CellLabel>Byudjet</CellLabel>
-                  </CellIconWrapper>
-                  <CellValue>{faculty.budget}</CellValue>
-                </CellContent>
-              </TableCell>
-
+              {/* Mobile view */}
               <MobileTable>
-                <CellIcon bgColor={faculty.iconColor}>{faculty.icon}</CellIcon>
                 <MobileTableCell>
                   <CellContent>
                     <CellIconWrapper>
                       <CellLabel>Fakultet</CellLabel>
                     </CellIconWrapper>
-                    <CellValue>{faculty.name}</CellValue>
+                    <CellValue>{f.name}</CellValue>
+                  </CellContent>
+                  <CellContent>
+                    <CellIconWrapper>
+                      <FaUniversity />
+                      <CellLabel>Kafedralar</CellLabel>
+                    </CellIconWrapper>
+                    <CellValue>{f.departments?.length || 0} ta</CellValue>
                   </CellContent>
                 </MobileTableCell>
-                <PerformanceBadge
-                  bgColor={performanceColors.bg}
-                  textColor={performanceColors.text}
-                  style={{ display: "flex", justifyContent: "center" }}
-                >
-                  {faculty.performance}%
-                </PerformanceBadge>
               </MobileTable>
-
-              <PerformanceBadge
-                bgColor={performanceColors.bg}
-                textColor={performanceColors.text}
-              >
-                {faculty.performance}%
-              </PerformanceBadge>
             </TableRow>
-          );
-        })}
+          ))
+        )}
       </FacultiesSection>
     </DashboardContainer>
   );

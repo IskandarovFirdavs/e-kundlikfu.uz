@@ -1,10 +1,10 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, useParams } from "react-router-dom";
 import Navbar from "./layout/Navbar.jsx";
 import styled, { ThemeProvider } from "styled-components";
 import { useState, useEffect } from "react";
 import { lightTheme, darkTheme } from "./styles/theme.js";
 import AppWrapper from "./styles/AppWrapper.jsx";
-
+import PrivateRoute from "./context/PrivateRoute.jsx";
 // Pages
 import Faculties from "./pages/Faculties.jsx";
 import Directions from "./pages/Directions.jsx";
@@ -51,11 +51,25 @@ function AppContent() {
             element={<StudentPractiseCreate />}
           />
           <Route path="/student/practise/:id" element={<StudentPractise />} />
-          <Route path="/students" element={<Students />} />
+          <Route path="/students/:id" element={<Students />} />
           <Route path="/student/:id/day/:dayId" element={<PractiseDetail />} />
-          <Route path="/departments" element={<Departments />} />
+          <Route
+            path="/departments"
+            element={
+              <PrivateRoute>
+                <Departments />
+              </PrivateRoute>
+            }
+          />
           <Route path="/directions" element={<Directions />} />
-          <Route path="/faculties" element={<Faculties />} />
+          <Route
+            path="/faculties"
+            element={
+              <PrivateRoute>
+                <Faculties />{" "}
+              </PrivateRoute>
+            }
+          />
 
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Routes>

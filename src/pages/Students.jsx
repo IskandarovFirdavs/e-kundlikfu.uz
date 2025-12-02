@@ -11,6 +11,7 @@ import {
   FaSchool,
   FaCalendarCheck,
 } from "react-icons/fa";
+import api from "../services/api.js";
 
 const slideIn = keyframes`
   from {
@@ -346,7 +347,7 @@ const Counter = styled.span`
 
 const TableRow = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1.2fr 80px;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 15px;
   padding: 20px;
   border-bottom: 1px solid ${(props) => props.theme.inputBorder};
@@ -367,14 +368,14 @@ const TableRow = styled.div`
   }
 
   @media (max-width: 1024px) {
-    grid-template-columns: 1fr 1fr 1fr;
     gap: 12px;
   }
 
   @media (max-width: 860px) {
-    gap: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 12px 8px;
-    margin: 8px 0;
     border: 1px solid ${(props) => props.theme.inputBorder};
     border-radius: 6px;
 
@@ -396,64 +397,16 @@ const TableCell = styled.div`
   @media (max-width: 860px) {
     gap: 10px;
     font-size: 14px;
-    display: none;
   }
 
   @media (max-width: 480px) {
     gap: 8px;
     font-size: 13px;
-  }
-`;
-const MobileTableCell = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 15px;
-  color: ${(props) => props.theme.text};
-  padding: 8px 0;
-
-  @media (max-width: 768px) {
-    gap: 10px;
-    font-size: 14px;
-  }
-
-  @media (max-width: 480px) {
-    gap: 8px;
-    font-size: 14px;
-  }
-`;
-const MobileTable = styled.div`
-  display: none;
-  @media (max-width: 860px) {
-    width: 80vw;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-`;
-const CellIcon = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  background-color: #f59e0b;
-  color: #fef3c7;
-  flex-shrink: 0;
-  font-weight: bold;
-
-  @media (max-width: 768px) {
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
-  }
-
-  @media (max-width: 480px) {
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    &:last-child {
+      display: none;
+    }
   }
 `;
 
@@ -515,33 +468,6 @@ const CellValue = styled.span`
   }
 `;
 
-const ScoreBadge = styled.div`
-  background-color: #f59e0b13;
-  color: #f59e0b;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 14px;
-  text-align: center;
-  min-width: 60px;
-  border: 1px solid ${(props) => props.textColor}20;
-
-  @media (max-width: 860px) {
-    padding: 6px 10px;
-    font-size: 13px;
-    min-width: 50px;
-    display: none;
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px 12px;
-    font-size: 14px;
-    min-width: 60px;
-    justify-self: start;
-    margin-top: 4px;
-  }
-`;
-
 const MobileFilterDropdown = styled.select`
   display: none;
 
@@ -569,63 +495,28 @@ const MobileFilterOption = styled.option`
   color: ${(props) => props.theme.text};
   padding: 10px;
 `;
+const TableCellInside = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
 
-const teacherData = [
-  {
-    id: 1,
-    student: "Karimova Zuhra",
-    group: "941-22",
-    location: "TashGRES",
-    date: "11/10/2023",
-    phone: "+998901234568",
-    score: 44,
-    status: "pending_review",
-    submitted: true,
-    approved: false,
-  },
-  {
-    id: 2,
-    student: "Qodirova Malika",
-    group: "941-22",
-    location: "TashGRES",
-    date: "15/10/2023",
-    phone: "+998901234572",
-    score: 43,
-    status: "pending_review",
-    submitted: true,
-    approved: false,
-  },
-];
-
-const getBadgeColors = (score, status) => {
-  if (status === "completed") return { bg: "#d1fae5", text: "#059669" };
-  if (status === "pending_review") return { bg: "#fef3c7", text: "#d97706" };
-  if (status === "not_submitted") return { bg: "#fee2e2", text: "#dc2626" };
-
-  if (score >= 45) return { bg: "#d1fae5", text: "#059669" };
-  if (score >= 44) return { bg: "#fef3c7", text: "#d97706" };
-  if (score >= 43) return { bg: "#fee2e2", text: "#dc2626" };
-  return { bg: "#f3f4f6", text: "#374151" };
-};
-
-const getStatusFromData = (item) => {
-  if (item.approved) return "completed";
-  if (item.submitted && !item.approved) return "pending_review";
-  return "not_submitted";
-};
-
-const getStatusText = (status) => {
-  switch (status) {
-    case "completed":
-      return "Tasdiqlangan";
-    case "pending_review":
-      return "Ko'rib chiqilmoqda";
-    case "not_submitted":
-      return "Topshirilmagan";
-    default:
-      return "Noma'lum";
+  @media (max-width: 480px) {
+    width: 100%;
+    justify-content: space-between;
   }
-};
+`;
+const TableCellAvatar = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+`;
 
 export default function Students({ isDark = false, onThemeChange }) {
   const theme = isDark ? darkTheme : lightTheme;
@@ -633,8 +524,10 @@ export default function Students({ isDark = false, onThemeChange }) {
   const location = useLocation();
   const [showNotification, setShowNotification] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
-  const [filteredData, setFilteredData] = useState(teacherData);
-  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [groups, setGroups] = useState([]); // Guruhlar ro'yxati
+  const [students, setStudents] = useState([]); // Barcha studentlar ro'yxati (guruhlar ichidan yig'ilgan)
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState();
 
   const handleNotificationClose = () => {
     setShowNotification(false);
@@ -666,26 +559,6 @@ export default function Students({ isDark = false, onThemeChange }) {
     }
   }, [location]);
 
-  useEffect(() => {
-    if (activeFilter === "all") {
-      setFilteredData(teacherData);
-    } else {
-      const filtered = teacherData.filter(
-        (item) => getStatusFromData(item) === activeFilter
-      );
-      setFilteredData(filtered);
-    }
-  }, [activeFilter]);
-
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = "/file.png";
-    link.download = "file.png";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const handleStatClick = (status) => {
     if (activeFilter === status) {
       setActiveFilter("all");
@@ -698,41 +571,48 @@ export default function Students({ isDark = false, onThemeChange }) {
     setActiveFilter(event.target.value);
   };
 
-  const handleActionClick = (id, action) => {
-    setActiveDropdown(null);
-    // Handle different actions here
-    switch (action) {
-      case "review":
-        navigate(`/review/${id}`);
-        break;
-      case "contact":
-        // Handle contact logic
-        break;
-      case "details":
-        navigate(`/student/${id}`);
-        break;
-      default:
-        break;
-    }
-  };
+  useEffect(() => {
+    const fetchGroups = async () => {
+      setLoading(true);
+      try {
+        const data = await api.getGroups();
+        setGroups(data);
 
-  const toggleDropdown = (id) => {
-    setActiveDropdown(activeDropdown === id ? null : id);
-  };
+        // Barcha guruhlardagi studentlarni yig'ish
+        const allStudents = [];
+        data.forEach((group) => {
+          if (group.students && group.students.length > 0) {
+            group.students.forEach((student) => {
+              allStudents.push({
+                ...student,
+                group_number: group.group_number,
+                group_id: group.id,
+              });
+            });
+          }
+        });
 
-  const statusCounts = {
-    completed: teacherData.filter(
-      (item) => getStatusFromData(item) === "completed"
-    ).length,
-    pending_review: teacherData.filter(
-      (item) => getStatusFromData(item) === "pending_review"
-    ).length,
-    not_submitted: teacherData.filter(
-      (item) => getStatusFromData(item) === "not_submitted"
-    ).length,
-    all: teacherData.length,
-  };
+        setStudents(allStudents);
+        setError(null);
+      } catch (err) {
+        setError("Failed to fetch students");
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchGroups();
+  }, []);
+
+  // Jami studentlar sonini hisoblash
+  const totalStudentsCount = students.length;
+
+  if (loading) {
+    return <DashboardContainer>Yuklanmoqda...</DashboardContainer>;
+  }
+  if (error) {
+    return <DashboardContainer>Xato: {error}</DashboardContainer>;
+  }
   return (
     <DashboardContainer>
       {showNotification && (
@@ -758,93 +638,6 @@ export default function Students({ isDark = false, onThemeChange }) {
 
       <StatsGrid>
         <StatCard
-          onClick={() => handleStatClick("completed")}
-          style={{
-            cursor: "pointer",
-            border: activeFilter === "completed" ? `2px solid #10b981` : "none",
-            transform:
-              activeFilter === "completed" ? "translateY(-2px)" : "none",
-            boxShadow:
-              activeFilter === "completed"
-                ? "0 4px 12px rgba(16, 185, 129, 0.3)"
-                : "0 1px 3px rgba(0, 0, 0, 0.1)",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <StatContent>
-            <Statdiv>
-              <StatLabel>Tasdiqlangan </StatLabel>
-              <StatIcon bgColor="#10b981">
-                <FaCalendarCheck />
-              </StatIcon>
-            </Statdiv>
-            <SmallStat>
-              <StatNumber bgColor="#10b98134" numberColor="#10b981">
-                {statusCounts.completed}
-              </StatNumber>
-            </SmallStat>
-          </StatContent>
-        </StatCard>
-
-        <StatCard
-          onClick={() => handleStatClick("pending_review")}
-          style={{
-            cursor: "pointer",
-            border:
-              activeFilter === "pending_review" ? `2px solid #f59e0b` : "none",
-            transform:
-              activeFilter === "pending_review" ? "translateY(-2px)" : "none",
-            boxShadow:
-              activeFilter === "pending_review"
-                ? "0 4px 12px rgba(245, 158, 11, 0.3)"
-                : "0 1px 3px rgba(0, 0, 0, 0.1)",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <StatContent>
-            <Statdiv>
-              <StatLabel>Ko'rib chiqilmoqda</StatLabel>
-              <StatIcon bgColor="#f59e0b">!</StatIcon>
-            </Statdiv>
-            <SmallStat>
-              <StatNumber bgColor="#f59f0b2c" numberColor="#f59e0b">
-                {statusCounts.pending_review}
-              </StatNumber>
-            </SmallStat>
-          </StatContent>
-        </StatCard>
-
-        <StatCard
-          onClick={() => handleStatClick("not_submitted")}
-          style={{
-            cursor: "pointer",
-            border:
-              activeFilter === "not_submitted" ? `2px solid #ef4444` : "none",
-            transform:
-              activeFilter === "not_submitted" ? "translateY(-2px)" : "none",
-            boxShadow:
-              activeFilter === "not_submitted"
-                ? "0 4px 12px rgba(239, 68, 68, 0.3)"
-                : "0 1px 3px rgba(0, 0, 0, 0.1)",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <StatContent>
-            <Statdiv>
-              <StatLabel>Topshirilmagan</StatLabel>
-              <StatIcon bgColor="#ef4444">
-                <FaEyeSlash />
-              </StatIcon>
-            </Statdiv>
-            <SmallStat>
-              <StatNumber bgColor="#ef44442c" numberColor="#ef4444">
-                {statusCounts.not_submitted}
-              </StatNumber>
-            </SmallStat>
-          </StatContent>
-        </StatCard>
-
-        <StatCard
           onClick={() => handleStatClick("all")}
           style={{
             cursor: "pointer",
@@ -866,7 +659,35 @@ export default function Students({ isDark = false, onThemeChange }) {
             </Statdiv>
             <SmallStat>
               <StatNumber bgColor="#3b82f62c" numberColor="#3b82f6">
-                {statusCounts.all}
+                {totalStudentsCount}
+              </StatNumber>
+            </SmallStat>
+          </StatContent>
+        </StatCard>
+
+        <StatCard
+          onClick={() => handleStatClick("all")}
+          style={{
+            cursor: "pointer",
+            border: activeFilter === "all" ? `2px solid #10b981` : "none",
+            transform: activeFilter === "all" ? "translateY(-2px)" : "none",
+            boxShadow:
+              activeFilter === "all"
+                ? "0 4px 12px rgba(16, 185, 129, 0.3)"
+                : "0 1px 3px rgba(0, 0, 0, 0.1)",
+            transition: "all 0.3s ease",
+          }}
+        >
+          <StatContent>
+            <Statdiv>
+              <StatLabel>Jami Guruhlar</StatLabel>
+              <StatIcon bgColor="#10b981">
+                <FaSchool />
+              </StatIcon>
+            </Statdiv>
+            <SmallStat>
+              <StatNumber bgColor="#10b98134" numberColor="#10b981">
+                {groups.length}
               </StatNumber>
             </SmallStat>
           </StatContent>
@@ -876,7 +697,7 @@ export default function Students({ isDark = false, onThemeChange }) {
       {/* Student Practice Days Section */}
       <PracticeDaysSection>
         <HeaderRow>
-          <SectionTitle>TALABALAR AMALIYOTI</SectionTitle>
+          <SectionTitle>TALABALAR RO'YXATI</SectionTitle>
           <div
             style={{
               display: "flex",
@@ -885,76 +706,60 @@ export default function Students({ isDark = false, onThemeChange }) {
               height: "100%",
             }}
           >
-            <Counter>
-              {filteredData.length}/{teacherData.length}
-            </Counter>
+            <Counter>{students.length} ta talaba</Counter>
           </div>
         </HeaderRow>
 
-        {filteredData.map((row, index) => {
-          const badgeColors = getBadgeColors(row.score, row.status);
-          const statusText = getStatusText(row.status);
-
-          return (
+        {students.length === 0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "40px 20px",
+              color: theme.text,
+              opacity: 0.7,
+            }}
+          >
+            <FaUserGraduate
+              style={{ fontSize: "48px", marginBottom: "16px" }}
+            />
+            <p>Hozircha talabalar mavjud emas</p>
+          </div>
+        ) : (
+          students.map((student) => (
             <TableRow
-              key={row.id}
-              style={{
-                cursor: "pointer",
-                gridTemplateColumns: "2fr 1.5fr 1fr 1fr 10px 10px",
-              }}
-              onClick={() => navigate(`/student/1`)}
+              key={student.id}
+              onClick={() => navigate(`/student/${student.id}`)}
             >
               <TableCell>
-                <CellIcon>!</CellIcon>
-                <CellContent>
-                  <CellIconWrapper>
-                    <PiStudentBold />
-                    <CellLabel>Talaba</CellLabel>
-                  </CellIconWrapper>
-                  <CellValue>{row.student}</CellValue>
-                </CellContent>
+                <TableCellInside>
+                  <TableCellAvatar>
+                    {student.first_name?.[0]}
+                    {student.last_name?.[0]}
+                  </TableCellAvatar>
+                  <CellContent>
+                    <CellIconWrapper>
+                      <PiStudentBold />
+                      <CellLabel>Talaba</CellLabel>
+                    </CellIconWrapper>
+                    <CellValue>
+                      {student.first_name} {student.last_name}
+                    </CellValue>
+                  </CellContent>
+                </TableCellInside>
               </TableCell>
+
               <TableCell>
                 <CellContent>
                   <CellIconWrapper>
                     <FaSchool />
                     <CellLabel>Guruh</CellLabel>
                   </CellIconWrapper>
-                  <CellValue>{row.group}</CellValue>
+                  <CellValue>{student.group_number || "—"}</CellValue>
                 </CellContent>
               </TableCell>
-
-              <TableCell>
-                <CellContent>
-                  <CellIconWrapper>
-                    <BsFillTelephoneFill />
-                    <CellLabel>Telefon raqam</CellLabel>
-                  </CellIconWrapper>
-                  <CellValue>{row.phone}</CellValue>
-                </CellContent>
-              </TableCell>
-
-              <MobileTable>
-                <CellIcon bgColor={row.iconBg}>{row.icon}!</CellIcon>
-                <MobileTableCell>
-                  <CellContent>
-                    <CellIconWrapper>
-                      <FaLocationDot />
-                      <CellLabel>Location</CellLabel>
-                    </CellIconWrapper>
-                    <CellValue>{row.location}</CellValue>
-                  </CellContent>
-                </MobileTableCell>
-                <ScoreBadge
-                  style={{ display: "flex", justifyContent: "center" }}
-                >
-                  {row.score} / 45
-                </ScoreBadge>
-              </MobileTable>
-              <ScoreBadge>{row.score} / 45</ScoreBadge>
             </TableRow>
-          );
-        })}
+          ))
+        )}
       </PracticeDaysSection>
     </DashboardContainer>
   );

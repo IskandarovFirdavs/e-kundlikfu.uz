@@ -885,7 +885,7 @@ export default function StudentDetail({ isDark = false }) {
               </TableCell>
 
               <MobileTable>
-                <CellIcon bgColor={row.iconBg}>{row.icon}</CellIcon>
+                <CellIcon bgColor={row.iconBg}>!</CellIcon>
                 <MobileTableCell>
                   <CellContent>
                     <CellIconWrapper>
@@ -895,12 +895,21 @@ export default function StudentDetail({ isDark = false }) {
                     <CellValue>{row.location}</CellValue>
                   </CellContent>
                 </MobileTableCell>
+
                 <ScoreBadge
-                  style={{ display: "flex", justifyContent: "center" }}
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
                 >
                   {row.score} / 45
                 </ScoreBadge>
               </MobileTable>
+              <ScoreBadge
+                style={{ backgroundColor: "#ef44442c", color: "#ef4444" }}
+              >
+                rejected
+              </ScoreBadge>
               <ScoreBadge>{row.score} / 45</ScoreBadge>
             </TableRow>
           );

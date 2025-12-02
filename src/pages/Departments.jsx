@@ -6,10 +6,10 @@ import {
   FaUsers,
   FaChalkboardTeacher,
   FaUserGraduate,
-  FaChartLine,
-  FaClipboardCheck,
+  FaDirections,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import api from "../services/api.js";
 
 const slideIn = keyframes`
   from {
@@ -337,7 +337,7 @@ const Counter = styled.span`
 
 const TableRow = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 2.5fr 1fr 1fr;
   gap: 15px;
   padding: 20px;
   border-bottom: 1px solid ${(props) => props.theme.inputBorder};
@@ -631,6 +631,9 @@ export default function Departments({ isDark = false, onThemeChange }) {
   const [showNotification, setShowNotification] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [filteredData, setFilteredData] = useState(departmentsData);
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const handleNotificationClose = () => {
     setShowNotification(false);
@@ -672,7 +675,24 @@ export default function Departments({ isDark = false, onThemeChange }) {
         departmentsData.length
     ),
   };
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const data = await api.getDepartments();
+        setDepartments(data); // API dan kelgan arrayni state ga o'rnatish
+      } catch (err) {
+        console.error("Departmentlarni olishda xato:", err);
+        setError("Departmentlarni yuklashda xato yuz berdi.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchDepartments();
+  }, []);
+
+  if (loading) return <p>Yuklanmoqda...</p>;
+  if (error) return <p>{error}</p>;
   return (
     <DashboardContainer>
       {showNotification && (
@@ -705,23 +725,12 @@ export default function Departments({ isDark = false, onThemeChange }) {
 
         <StatCard>
           <StatIcon bgColor="#10B981">
-            <FaUserGraduate />
+            <FaDirections />
           </StatIcon>
           <StatContent>
-            <StatLabel>Talabalar</StatLabel>
-            <StatNumber>{totalStats.students}</StatNumber>
-            <StatDescription>Jami talabalar soni</StatDescription>
-          </StatContent>
-        </StatCard>
-
-        <StatCard>
-          <StatIcon bgColor="#F59E0B">
-            <FaChalkboardTeacher />
-          </StatIcon>
-          <StatContent>
-            <StatLabel>O'qituvchilar</StatLabel>
-            <StatNumber>{totalStats.teachers}</StatNumber>
-            <StatDescription>Jami o'qituvchilar soni</StatDescription>
+            <StatLabel>Yo'nalishlar</StatLabel>
+            <StatNumber>3</StatNumber>
+            <StatDescription>Jami yo'nalishlar soni</StatDescription>
           </StatContent>
         </StatCard>
       </StatsGrid>
@@ -744,37 +753,24 @@ export default function Departments({ isDark = false, onThemeChange }) {
           </div>
         </HeaderRow>
 
-        {filteredData.map((department, index) => {
-          const progressColors = getProgressColors(department.completionRate);
+        {departments.map((dept) => {
+          const progressColors = getProgressColors(dept.completionRate);
 
           return (
             <TableRow
-              key={department.id}
+              key={dept.id}
               style={{
                 cursor: "pointer",
               }}
               onClick={() => navigate(`/directions`)}
             >
               <TableCell>
-                <CellIcon bgColor={department.iconColor}>
-                  {department.icon}
-                </CellIcon>
                 <CellContent>
                   <CellIconWrapper>
                     <CellLabel>Kafedra</CellLabel>
                   </CellIconWrapper>
-                  <CellValue>{department.name}</CellValue>
-                  <CellLabel>{department.code}</CellLabel>
-                </CellContent>
-              </TableCell>
-
-              <TableCell>
-                <CellContent>
-                  <CellIconWrapper>
-                    <FaUsers />
-                    <CellLabel>Kafedra Mudiri</CellLabel>
-                  </CellIconWrapper>
-                  <CellValue>{department.head}</CellValue>
+                  <CellValue>{dept.name}</CellValue>
+                  <CellLabel>{dept.attf}</CellLabel>
                 </CellContent>
               </TableCell>
 
@@ -782,49 +778,34 @@ export default function Departments({ isDark = false, onThemeChange }) {
                 <CellContent>
                   <CellIconWrapper>
                     <FaUserGraduate />
-                    <CellLabel>Talabalar</CellLabel>
+                    <CellLabel>Kafedra Mudiri</CellLabel>
                   </CellIconWrapper>
-                  <CellValue>{department.students} ta</CellValue>
+                  <CellValue>
+                    {dept.head.first_name} {dept.head.last_name}
+                  </CellValue>
                 </CellContent>
               </TableCell>
 
               <TableCell>
                 <CellContent>
                   <CellIconWrapper>
-                    <FaChalkboardTeacher />
-                    <CellLabel>O'qituvchilar</CellLabel>
+                    <FaDirections />
+                    <CellLabel>Yo'nalishlar</CellLabel>
                   </CellIconWrapper>
-                  <CellValue>{department.teachers} ta</CellValue>
+                  <CellValue>2 ta</CellValue>
                 </CellContent>
               </TableCell>
 
               <MobileTable>
-                <CellIcon bgColor={department.iconColor}>
-                  {department.icon}
-                </CellIcon>
                 <MobileTableCell>
                   <CellContent>
                     <CellIconWrapper>
                       <CellLabel>Kafedra</CellLabel>
                     </CellIconWrapper>
-                    <CellValue>{department.name}</CellValue>
+                    <CellValue>{dept.name}</CellValue>
                   </CellContent>
                 </MobileTableCell>
-                <ProgressBadge
-                  bgColor={progressColors.bg}
-                  textColor={progressColors.text}
-                  style={{ display: "flex", justifyContent: "center" }}
-                >
-                  {department.completionRate}%
-                </ProgressBadge>
               </MobileTable>
-
-              <ProgressBadge
-                bgColor={progressColors.bg}
-                textColor={progressColors.text}
-              >
-                {department.completionRate}%
-              </ProgressBadge>
             </TableRow>
           );
         })}
