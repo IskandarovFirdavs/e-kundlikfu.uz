@@ -9,30 +9,11 @@ import { FaEyeSlash } from "react-icons/fa6";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import api from "../services/api.js";
 
-const colorFlow = keyframes`
-  0% {
-    background-position: -100% 0%;
-  }
-  50% {
-    background-position: 100% 0%;
-  }
-  100% {
-    background-position: -100% 0%;
-  }
-`;
-
 const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
   padding: 30px 50px;
   transition: all 0.3s ease;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(66, 153, 225, 0.15) 50%,
-    transparent 100%
-  );
   background-size: 200% 100%;
-  animation: ${colorFlow} 4s linear infinite;
   margin-top: -3px;
   position: relative;
 
@@ -43,9 +24,7 @@ const DashboardContainer = styled.div`
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, transparent, #4299e1, transparent);
     background-size: 200% 100%;
-    animation: ${colorFlow} 2s linear infinite;
   }
 
   @media (max-width: 1024px) {
@@ -74,10 +53,6 @@ const StatsGrid = styled.div`
   @media (max-width: 1024px) {
     grid-template-columns: repeat(2, 1fr);
     gap: 30px;
-  }
-
-  @media (max-width: 640px) {
-    display: none;
   }
 `;
 
@@ -177,12 +152,11 @@ const TableRow = styled(Link)`
   }
 
   @media (max-width: 860px) {
-    gap: 12px;
     padding: 12px 8px;
-    margin: 8px 0;
     border: 1px solid ${(props) => props.theme.inputBorder};
     border-radius: 6px;
-
+    display: flex;
+    align-items: center;
     &:hover {
       transform: none;
       box-shadow: 0 2px 4px ${(props) => props.theme.cardShadow};
@@ -217,7 +191,6 @@ const MobileTableCell = styled.div`
   font-size: 15px;
   color: ${(props) => props.theme.text};
   padding: 8px 0;
-
   @media (max-width: 768px) {
     gap: 10px;
     font-size: 14px;
@@ -232,10 +205,10 @@ const MobileTableCell = styled.div`
 const MobileTable = styled.div`
   display: none;
   @media (max-width: 860px) {
-    width: 80vw;
-    display: grid;
-    grid-template-columns: 1fr 2fr 2fr;
+    display: flex;
     align-items: center;
+    justify-content: center;
+    gap: 20px;
   }
 `;
 
@@ -540,7 +513,12 @@ export default function StudentDetail({ isDark = false }) {
               </TableCell>
               <MobileTable>
                 {" "}
-                <CellIcon bgColor={prc.iconBg}>{prc.icon}</CellIcon>
+                <CellIcon
+                  badgeColor={getStatusColors(prc.status).badge}
+                  textColor={getStatusColors(prc.status).text}
+                >
+                  {getStatusColors(prc.status).icon}
+                </CellIcon>
                 <MobileTableCell>
                   <CellContent>
                     <CellIconWrapper>

@@ -119,16 +119,8 @@ class API {
 
   // LOGOUT
   async logout() {
-    try {
-      await this.request("/users/logout/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-    } finally {
-      this.clearToken();
-    }
+    this.clearToken();
+    return { success: true };
   }
 
   // CREATE USER (Admin only)

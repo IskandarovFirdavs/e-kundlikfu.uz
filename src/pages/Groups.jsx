@@ -5,30 +5,11 @@ import { HiMiniUserGroup } from "react-icons/hi2";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api.js";
 
-const colorFlow = keyframes`
-  0% {
-    background-position: -100% 0%;
-  }
-  50% {
-    background-position: 100% 0%;
-  }
-  100% {
-    background-position: -100% 0%;
-  }
-`;
-
 const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
   padding: 30px 50px;
   transition: all 0.3s ease;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(66, 153, 225, 0.15) 50%,
-    transparent 100%
-  );
   background-size: 200% 100%;
-  animation: ${colorFlow} 4s linear infinite;
   margin-top: -3px;
   position: relative;
 
@@ -39,9 +20,7 @@ const DashboardContainer = styled.div`
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, transparent, #4299e1, transparent);
     background-size: 200% 100%;
-    animation: ${colorFlow} 2s linear infinite;
   }
 
   @media (max-width: 1024px) {
@@ -156,7 +135,6 @@ const TableCell = styled.div`
   @media (max-width: 860px) {
     gap: 10px;
     font-size: 14px;
-    display: none;
   }
 
   @media (max-width: 480px) {
@@ -232,7 +210,7 @@ const CellValue = styled.span`
   }
 `;
 
-export default function Groups({ isDark = false }) {
+export default function Groups({ isDark = false, onThemeChange }) {
   const { id } = useParams();
   const directionId = id;
 

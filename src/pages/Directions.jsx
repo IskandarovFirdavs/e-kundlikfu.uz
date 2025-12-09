@@ -5,30 +5,11 @@ import { FaBuilding } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api.js";
 
-const colorFlow = keyframes`
-  0% {
-    background-position: -100% 0%;
-  }
-  50% {
-    background-position: 100% 0%;
-  }
-  100% {
-    background-position: -100% 0%;
-  }
-`;
-
 const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
   padding: 30px 50px;
   transition: all 0.3s ease;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(66, 153, 225, 0.15) 50%,
-    transparent 100%
-  );
   background-size: 200% 100%;
-  animation: ${colorFlow} 4s linear infinite;
   margin-top: -3px;
   position: relative;
 
@@ -39,9 +20,7 @@ const DashboardContainer = styled.div`
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, transparent, #4299e1, transparent);
     background-size: 200% 100%;
-    animation: ${colorFlow} 2s linear infinite;
   }
 
   @media (max-width: 1024px) {
@@ -171,120 +150,6 @@ const DirectionRow = styled.div`
   }
 `;
 
-const DirectionHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  padding: 10px 0;
-`;
-
-const DirectionInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 15px;
-`;
-
-const DirectionIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #8b5cf6;
-  color: white;
-  font-size: 18px;
-`;
-
-const DirectionContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-`;
-
-const DirectionName = styled.span`
-  font-weight: 600;
-  font-size: 16px;
-  color: ${(props) => props.theme.text};
-`;
-
-const DirectionMeta = styled.span`
-  font-size: 13px;
-  opacity: 0.7;
-  color: ${(props) => props.theme.text};
-`;
-
-const GroupsContainer = styled.div`
-  margin-top: 15px;
-  padding-left: 55px;
-  display: ${(props) => (props.isOpen ? "block" : "none")};
-
-  @media (max-width: 480px) {
-    padding-left: 20px;
-  }
-`;
-
-const GroupRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 12px 15px;
-  margin: 8px 0;
-  border-radius: 6px;
-  background-color: ${(props) => props.theme.statCard};
-  transition: all 0.3s ease;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #64646444;
-    transform: translateX(5px);
-  }
-
-  @media (max-width: 480px) {
-    padding: 10px 12px;
-    gap: 12px;
-  }
-`;
-
-const GroupIcon = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #3b82f6;
-  color: white;
-  font-size: 14px;
-`;
-
-const GroupContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex: 1;
-`;
-
-const GroupName = styled.span`
-  font-weight: 600;
-  font-size: 14px;
-  color: ${(props) => props.theme.text};
-`;
-
-const GroupStats = styled.span`
-  font-size: 12px;
-  opacity: 0.7;
-  color: ${(props) => props.theme.text};
-`;
-
-const ChevronIcon = styled.div`
-  transition: transform 0.3s ease;
-  transform: ${(props) => (props.isOpen ? "rotate(180deg)" : "rotate(0deg)")};
-  color: ${(props) => props.theme.text};
-  opacity: 0.7;
-`;
-
 const CellContent = styled.div`
   display: flex;
   flex-direction: column;
@@ -337,7 +202,6 @@ const TableCell = styled.div`
   @media (max-width: 860px) {
     gap: 10px;
     font-size: 14px;
-    display: none;
   }
 
   @media (max-width: 480px) {
@@ -346,7 +210,7 @@ const TableCell = styled.div`
   }
 `;
 
-export default function Directions({ isDark = false }) {
+export default function Directions({ isDark = false, onThemeChange }) {
   const { id } = useParams();
   const departmentId = id;
 

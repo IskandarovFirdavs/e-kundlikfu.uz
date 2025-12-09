@@ -5,32 +5,13 @@ import { FaUniversity, FaUsers } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api.js";
 
-const colorFlow = keyframes`
-  0% {
-    background-position: -100% 0%;
-  }
-  50% {
-    background-position: 100% 0%;
-  }
-  100% {
-    background-position: -100% 0%;
-  }
-`;
-
 const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
   padding: 30px 50px;
   transition: all 0.3s ease;
 
   /* Clean blue gradient that moves across */
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(66, 153, 225, 0.15) 50%,
-    transparent 100%
-  );
   background-size: 200% 100%;
-  animation: ${colorFlow} 4s linear infinite;
   margin-top: -3px;
   /* Simple animated top border */
   position: relative;
@@ -42,9 +23,7 @@ const DashboardContainer = styled.div`
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, transparent, #4299e1, transparent);
     background-size: 200% 100%;
-    animation: ${colorFlow} 2s linear infinite;
   }
 
   @media (max-width: 1024px) {
@@ -404,7 +383,6 @@ export default function Faculties({ isDark = false, onThemeChange }) {
 
     fetchData();
   }, [navigate]);
-
 
   if (loading) {
     return (

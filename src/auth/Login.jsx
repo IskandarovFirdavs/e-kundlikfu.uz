@@ -166,7 +166,7 @@ export default function Login({ dark, setDark }) {
 
     try {
       const data = await api.login(username, password);
-      navigate("/faculties"); // token allaqachon api.login ichida saqlangan
+      navigate("/faculties");
     } catch (err) {
       setError("Login yoki parol xato");
     } finally {
