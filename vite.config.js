@@ -7,17 +7,17 @@ export default defineConfig({
   server: {
     proxy: {
       "^/university/.*": {
-        target: "https://e76951324360.ngrok-free.app",
+        target: "https://4444fdcee6c0.ngrok-free.app",
         changeOrigin: true,
         secure: false,
       },
       "^/practice/.*": {
-        target: "https://e76951324360.ngrok-free.app",
+        target: "https://4444fdcee6c0.ngrok-free.app",
         changeOrigin: true,
         secure: false,
       },
       "^/users/.*": {
-        target: "https://e76951324360.ngrok-free.app",
+        target: "https://4444fdcee6c0.ngrok-free.app",
         changeOrigin: true,
         secure: false,
       },

@@ -16,6 +16,7 @@ const DashboardContainer = styled.div`
   background-size: 200% 100%;
   margin-top: -3px;
   position: relative;
+  z-index: 0;
 
   &::before {
     content: "";
@@ -460,7 +461,7 @@ export default function StudentDetail({ isDark = false }) {
             <FaUserGraduate
               style={{ fontSize: "48px", marginBottom: "16px" }}
             />
-            <p>Hozircha talabalar mavjud emas</p>
+            <p>Hozircha amaliyotlar mavjud emas</p>
           </div>
         ) : (
           day.practice_days.map((prc) => (

@@ -11,6 +11,7 @@ const Layout = styled.div`
   min-height: 85vh;
   padding: 20px;
   box-sizing: border-box;
+  z-index: 0;
 
   @media (max-width: 768px) {
     padding: 15px;
@@ -430,7 +431,6 @@ export default function Create({ onSubmissionSuccess }) {
 
   return (
     <Layout>
-
       <FormContainer>
         {/* CHAP QISMI */}
         <Side>

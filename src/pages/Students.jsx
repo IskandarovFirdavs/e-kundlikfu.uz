@@ -10,6 +10,7 @@ const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
   padding: 30px 50px;
   transition: all 0.3s ease;
+  z-index: 0;
 
   /* Clean blue gradient that moves across */
   background-size: 200% 100%;

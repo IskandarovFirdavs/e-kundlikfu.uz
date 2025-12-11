@@ -1,139 +1,210 @@
-import React, { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import logo from "../../public/logog.png";
-import icon from "../../public/seticon.png";
-import { RxExit } from "react-icons/rx";
 import api from "../services/api";
+import { MdLightMode, MdDarkMode } from "react-icons/md";
+import { IoExitOutline } from "react-icons/io5";
 
-// === STYLES ===
+const fadeIn = keyframes`
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+`;
+
 const Nav = styled.nav`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0px 40px;
+  padding: 0 40px;
   height: 87px;
   background: #007bff;
+
   @media (max-width: 768px) {
-    padding: 0px 8px;
+    padding: 0 12px;
   }
 `;
 
 const Left = styled.div`
-  display: flex;
-  align-items: center;
-  height: 100%;
   img {
-    height: 100%;
-  }
-  @media (max-width: 768px) {
-    width: 120px;
-    object-fit: contain;
-    height: 60%;
-  }
-`;
-
-const Toggle = styled.img`
-  width: 25px;
-  height: 25px;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-
-  &:hover {
-    transform: rotate(90deg);
+    height: 70px;
   }
 `;
 
 const Right = styled.div`
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 18px;
 `;
 
-// oxirgi 5 sekundda tebranish animatsiya
-const shake = keyframes`
-  0% { transform: translateX(0); }
-  20% { transform: translateX(-2px); }
-  40% { transform: translateX(2px); }
-  60% { transform: translateX(-2px); }
-  80% { transform: translateX(2px); }
-  100% { transform: translateX(0); }
-`;
-
-const HoldButton = styled.div`
-  position: relative;
-  width: 130px;
-  height: 38px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.15);
+const Avatar = styled.div`
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #ffffff33;
+  border: 2px solid #ffffff80;
   color: white;
-  font-weight: 500;
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 7px;
+  align-items: center;
+  font-weight: 600;
   cursor: pointer;
-  overflow: hidden;
-  user-select: none;
+  font-size: 18px;
+  transition: 0.2s;
 
-  animation: ${(p) => (p.shake ? shake : "none")} 0.3s infinite;
-
-  @media (max-width: 768px) {
-    width: 90px; /* Mobil uchun kengroq */
-    height: 40px;
+  &:hover {
+    background: #ffffff55;
   }
 `;
 
-const Progress = styled.div`
-  position: absolute;
-  inset: 0;
-  background: #1a004f;
-  width: ${(p) => p.progress}%;
-  transition: width 0.1s linear;
-  z-index: 1;
+const Langs = styled.div`
+  display: flex;
+  gap: 6px;
+
+  span {
+    padding: 4px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    background: ${(p) => (p.dark ? "#374151" : "#e5e7eb")};
+
+    &:hover {
+      opacity: 0.7;
+    }
+  }
 `;
 
-const Content = styled.div`
-  z-index: 2;
+const SwitchWrapper = styled.div`
   display: flex;
-  gap: 7px;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 12px 18px;
+`;
+
+const MenuBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+`;
+
+const Menu = styled.div`
+  position: fixed;
+  top: 90px;
+  right: 40px;
+  background: ${(p) =>
+    p.dark ? "rgba(31,41,55,0.8)" : "rgba(255,255,255,0.8)"};
+  color: ${(p) => (p.dark ? "#f9fafb" : "#111")};
+  backdrop-filter: blur(15px);
+  border-radius: 16px;
+  padding: 12px 0;
+  width: 230px;
+  box-shadow: 0 10px 40px #00000040;
+  z-index: 9999;
+  animation: ${fadeIn} 0.2s ease;
+
+  @media (max-width: 768px) {
+    right: 10px;
+    top: 80px;
+  }
+`;
+
+const MenuItem = styled.div`
+  padding: 12px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  transition: 0.2s;
+  align-items: center;
+  &:hover {
+    background: ${(p) => (p.dark ? "#374151" : "#f3f4f6")};
+  }
+`;
+
+const ExitItem = styled.div`
+  padding: 12px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  transition: 0.2s;
+  align-items: center;
+  &:hover {
+    background: ${(p) => (p.dark ? "#374151" : "#f3f4f6")};
+  }
+  justify-content: left;
+  gap: 10px;
+  svg {
+    font-size: 18px;
+    font-weight: 700;
+  }
+`;
+
+const IOSSwitch = styled.div`
+  width: 50px;
+  height: 26px;
+  background: ${(p) => (p.dark ? "#4b5563" : "#d1d5db")};
+  border-radius: 30px;
+  padding: 3px;
+  position: relative;
+  cursor: pointer;
+  transition: 0.25s ease;
+`;
+
+const Thumb = styled.div`
+  width: 20px;
+  height: 20px;
+  background: ${(p) => (p.dark ? "#111827" : "white")};
+  border-radius: 50%;
+  position: absolute;
+  left: ${(p) => (p.dark ? "27px" : "3px")};
+  transition: 0.25s ease;
+  box-shadow: 0 2px 6px #0003;
+`;
+
+const Switcher = styled.div`
+  height: 100%;
+  width: 57%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   align-items: center;
 `;
 
-// === COMPONENT ===
 function Navbar({ dark, setDark }) {
-  const [progress, setProgress] = useState(0);
-  const [shakeAnim, setShakeAnim] = useState(false);
-  const intervalRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [lang, setLang] = useState("uz");
+  const menuRef = useRef(null);
 
-  const TOTAL_TIME = 5000; // 5 sekund
-  const STEP_TIME = 100; // 0.1s
-  const STEP_PERCENT = 100 / (TOTAL_TIME / STEP_TIME);
-
-  const handleMouseDown = () => {
-    let value = 0;
-
-    intervalRef.current = setInterval(() => {
-      value += STEP_PERCENT;
-      setProgress(value);
-
-      // 🔥 Oxirgi 5 sekund
-      if (value >= 90) {
-        setShakeAnim(true);
-      }
-
-      if (value >= 100) {
-        clearInterval(intervalRef.current);
-        api.logout();
-      }
-    }, STEP_TIME);
+  // FAKE USER (o'z JSONdan olasan)
+  const user = {
+    username: "Firdavs",
+    first_name: "Firdavs",
+    last_name: "Iskandarov",
   };
 
-  const handleMouseUp = () => {
-    clearInterval(intervalRef.current);
-    setProgress(0);
-    setShakeAnim(false);
+  const getLetter = () => {
+    if (user.username) return user.username[0].toUpperCase();
+    if (user.first_name) return user.first_name[0].toUpperCase();
+    if (user.last_name) return user.last_name[0].toUpperCase();
+    return "?";
   };
+
+  // tashqi click — menu yopilsin
+  useEffect(() => {
+    const close = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
 
   return (
     <Nav>
@@ -142,19 +213,40 @@ function Navbar({ dark, setDark }) {
       </Left>
 
       <Right>
-        <Toggle src={icon} onClick={() => setDark(!dark)} alt="mode" />
+        {/* Avatar */}
+        <Avatar onClick={() => setOpen(!open)}>{getLetter()}</Avatar>
 
-        <HoldButton
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          shake={shakeAnim}
-        >
-          <Progress progress={progress} />
-          <Content>
-            Chiqish <RxExit />
-          </Content>
-        </HoldButton>
+        {open && (
+          <>
+            <MenuBackdrop onClick={() => setOpen(false)} />
+
+            <Menu dark={dark} ref={menuRef}>
+              <MenuItem dark={dark}>
+                Til
+                <Langs dark={dark}>
+                  <span onClick={() => setLang("uz")}>UZ</span>
+                  <span onClick={() => setLang("ru")}>RU</span>
+                  <span onClick={() => setLang("en")}>EN</span>
+                </Langs>
+              </MenuItem>
+
+              <SwitchWrapper dark={dark}>
+                <span>Rejim </span>
+                <Switcher>
+                  <MdLightMode size={20} style={{ opacity: dark ? 0.4 : 1 }} />
+                  <IOSSwitch dark={dark} onClick={() => setDark(!dark)}>
+                    <Thumb dark={dark} />
+                  </IOSSwitch>
+                  <MdDarkMode size={20} style={{ opacity: dark ? 1 : 0.4 }} />
+                </Switcher>
+              </SwitchWrapper>
+
+              <ExitItem dark={dark} onClick={() => api.logout()}>
+                Chiqish <IoExitOutline />
+              </ExitItem>
+            </Menu>
+          </>
+        )}
       </Right>
     </Nav>
   );

@@ -12,7 +12,7 @@ const DashboardContainer = styled.div`
   background-size: 200% 100%;
   margin-top: -3px;
   position: relative;
-
+  z-index: 0;
   &::before {
     content: "";
     position: absolute;

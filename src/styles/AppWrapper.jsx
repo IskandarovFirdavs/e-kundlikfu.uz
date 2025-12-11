@@ -8,23 +8,39 @@ const gradient = keyframes`
 
 const AppWrapper = styled.div`
   min-height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  margin: 0 auto;
+  margin: 0;
   padding: 0;
   background: ${(p) => p.theme.bg};
   color: ${(p) => p.theme.text};
   transition: background 0.3s ease, color 0.3s ease;
-  width: 100%;
+  position: relative;
+  overflow: hidden;
 
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(66, 153, 225, 0.15) 50%,
-    transparent 100%
-  );
-  background-size: 400% 400%;
-  animation: ${gradient} 8s ease infinite;
+  /* 🔥 Gradientni overlay qilish */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(66, 153, 225, 0.15) 50%,
+      transparent 100%
+    );
+    background-size: 400% 400%;
+    animation: ${gradient} 8s ease infinite;
+    z-index: 0;
+  }
+
+  /* Ichidagi kontent yuqorida turadi */
+  > * {
+    position: relative;
+    z-index: 1;
+  }
 `;
 
 export default AppWrapper;
