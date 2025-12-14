@@ -342,9 +342,12 @@ function Navbar({ dark, setDark }) {
         <img src={logo} alt="Logo" />
 
         {/* Navigation Buttons */}
+      </Left>
+
+      <Right>
         <NavButtons>
           <NavButton
-            dark={dark}
+            dark={dark ? true : undefined}
             onClick={goBack}
             disabled={currentIndex <= 0}
             title="Orqaga (Alt + ←)"
@@ -353,7 +356,7 @@ function Navbar({ dark, setDark }) {
           </NavButton>
 
           <NavButton
-            dark={dark}
+            dark={dark ? true : undefined}
             onClick={goForward}
             disabled={currentIndex >= history.length - 1}
             title="Oldinga (Alt + →)"
@@ -361,9 +364,6 @@ function Navbar({ dark, setDark }) {
             <IoChevronForward />
           </NavButton>
         </NavButtons>
-      </Left>
-
-      <Right>
         {/* Avatar */}
         <Avatar onClick={() => setOpen(!open)}>{getLetter()}</Avatar>
 

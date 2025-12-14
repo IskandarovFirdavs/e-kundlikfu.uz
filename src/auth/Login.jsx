@@ -71,7 +71,9 @@ const Logo = styled.img`
   height: 45px;
 
   @media (max-width: 600px) {
-    width: 75px;
+    width: 100px;
+    height: 40px;
+    object-fit: contain;
   }
 `;
 

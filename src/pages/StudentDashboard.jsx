@@ -7,6 +7,8 @@ import { FaLocationDot } from "react-icons/fa6";
 import { IoCalendarNumber } from "react-icons/io5";
 import { BsFillTelephoneFill } from "react-icons/bs";
 import { useNavigate, useLocation } from "react-router-dom";
+import api from "../services/api.js";
+
 const slideIn = keyframes`
   from {
     transform: translateX(100%);
@@ -672,6 +674,18 @@ export default function StudentDashboard({ isDark = false, onThemeChange }) {
   const handleNotificationClose = () => {
     setShowNotification(false);
   };
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await api.getCurrentUser();
+        console.log("CURRENT USER:", user);
+      } catch (err) {
+        console.log("USER ERROR:", err);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("preferredTheme");

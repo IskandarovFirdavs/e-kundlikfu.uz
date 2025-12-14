@@ -24,7 +24,6 @@ class API {
     }
 
     try {
-      console.log("Sending request to:", url);
       const response = await fetch(url, config);
 
       // 401 xatosi bo'lsa
@@ -163,6 +162,13 @@ class API {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(userData),
+    });
+  }
+
+  // DELETE user
+  async deleteUser(userId) {
+    return this.request(`/users/users/${userId}/`, {
+      method: "DELETE",
     });
   }
 
