@@ -217,7 +217,7 @@ export default function Directions({ isDark = false, onThemeChange }) {
 
   const theme = isDark ? darkTheme : lightTheme;
   const navigate = useNavigate();
-  const [department, setDepartment] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -233,45 +233,48 @@ export default function Directions({ isDark = false, onThemeChange }) {
   }, [isDark]);
 
   useEffect(() => {
-    if (!departmentId) return;
-    let aborded = false;
-    const controller = new AbortController();
+    let aborted = false;
 
     async function load() {
       setLoading(true);
       setError(null);
+
       try {
-        const data = await api.getDepartment(departmentId, {
-          signal: controller.signal,
-        });
-        if (!aborded) setDepartment(data);
+        const result = departmentId
+          ? await api.getDepartment(departmentId)
+          : await api.getDirections();
+
+        if (!aborted) setData(result);
       } catch (err) {
-        if (err.name === "AbortError") return;
-        if (!aborded) setError(err.message || String(err));
+        if (!aborted) setError(err.message || String(err));
       } finally {
-        if (!aborded) setLoading(false);
+        if (!aborted) setLoading(false);
       }
     }
+
     load();
     return () => {
-      aborded = true;
-      controller.abort();
+      aborted = true;
     };
   }, [departmentId]);
 
   // render
-  if (!departmentId) return <div className="p-4">No id provided .</div>;
-  if (loading) return <div className="p-4">Loading . .</div>;
+  if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
-  if (!department)
-    return <div className="p-4">No data found for id: {departmentId}</div>;
+  if (!data) return <div className="p-4">No data found</div>;
+
+  const directions = departmentId ? data?.directions || [] : data || [];
 
   return (
     <DashboardContainer>
       {/* Directions Section */}
       <DirectionsSection>
         <HeaderRow>
-          <SectionTitle>{department.abbr} kafedra yo'nalishlari</SectionTitle>
+          <SectionTitle>
+            {departmentId
+              ? `${data.abbr} kafedra yo‘nalishlari`
+              : "Barcha yo‘nalishlar"}
+          </SectionTitle>
           <div
             style={{
               display: "flex",
@@ -280,16 +283,16 @@ export default function Directions({ isDark = false, onThemeChange }) {
               height: "100%",
             }}
           >
-            <Counter>{department.directions?.length || 0} ta yo'nalish</Counter>
+            <Counter>{directions.length} ta yo'nalish</Counter>
           </div>
         </HeaderRow>
 
-        {department.directions?.length === 0 && (
+        {directions.length === 0 && (
           <div style={{ padding: "20px", color: theme.text }}>
             Hozircha yo'nalishlar mavjud emas.
           </div>
         )}
-        {department.directions?.map((dir) => (
+        {directions.map((dir) => (
           <DirectionRow
             key={dir.id}
             onClick={() => navigate(`/direction/${dir.id}`)}

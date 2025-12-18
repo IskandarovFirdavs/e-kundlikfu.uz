@@ -228,11 +228,11 @@ const CellValue = styled.span`
 
 export default function Departments({ isDark = false, onThemeChange }) {
   const { id } = useParams();
-  const departmentId = id;
+  const facultyId = id;
 
   const theme = isDark ? darkTheme : lightTheme;
   const navigate = useNavigate();
-  const [department, setDepartment] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -248,44 +248,46 @@ export default function Departments({ isDark = false, onThemeChange }) {
   }, [isDark]);
 
   useEffect(() => {
-    if (!departmentId) return;
-    let aborded = false;
-    const controller = new AbortController();
+    let aborted = false;
 
     async function load() {
       setLoading(true);
       setError(null);
+
       try {
-        const data = await api.getFaculty(departmentId, {
-          signal: controller.signal,
-        });
-        if (!aborded) setDepartment(data);
+        const result = facultyId
+          ? await api.getFaculty(facultyId)
+          : await api.getDepartments();
+
+        if (!aborted) setData(result);
       } catch (err) {
-        if (err.name === "AbortError") return;
-        if (!aborded) setError(err.message || String(err));
+        if (!aborted) setError(err.message || String(err));
       } finally {
-        if (!aborded) setLoading(false);
+        if (!aborted) setLoading(false);
       }
     }
+
     load();
     return () => {
-      aborded = true;
-      controller.abort();
+      aborted = true;
     };
-  }, [departmentId]);
+  }, [facultyId]);
 
   // render
-  if (!departmentId) return <div className="p-4">No id provided .</div>;
-  if (loading) return <div className="p-4">Loading . .</div>;
+  if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
-  if (!department)
-    return <div className="p-4">No data found for id: {departmentId}</div>;
+  if (!data) return <div className="p-4">No data found.</div>;
+
+  const departments = facultyId ? data?.departments || [] : data || [];
+
   return (
     <DashboardContainer>
       {/* Mobile Filter Dropdown */}
       <DepartmentsSection>
         <HeaderRow>
-          <SectionTitle>{department.name} — Kafedralar ro‘yxati</SectionTitle>
+          <SectionTitle>
+            {facultyId ? data.name : "Barcha kafedralar"} — Kafedralar ro‘yxati
+          </SectionTitle>{" "}
           <div
             style={{
               display: "flex",
@@ -294,15 +296,15 @@ export default function Departments({ isDark = false, onThemeChange }) {
               height: "100%",
             }}
           >
-            <Counter>{department.departments?.length || 0} ta</Counter>
+            <Counter>{departments.length} ta</Counter>
           </div>
         </HeaderRow>
-        {department.departments?.length === 0 && (
+        {departments.length === 0 && (
           <p style={{ padding: "20px", color: theme.text }}>
             Hozircha kafedralar mavjud emas.
           </p>
         )}
-        {department.departments?.map((dep) => (
+        {departments.map((dep) => (
           <TableRow
             key={dep.id}
             onClick={() => navigate(`/department/${dep.id}`)}

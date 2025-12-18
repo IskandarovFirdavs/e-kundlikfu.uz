@@ -268,44 +268,57 @@ export default function Students({ isDark = false, onThemeChange }) {
   }, [isDark]);
 
   useEffect(() => {
-    if (!groupId) return;
-    let aborded = false;
+    let aborted = false;
     const controller = new AbortController();
 
     async function load() {
       setLoading(true);
       setError(null);
+
       try {
-        const data = await api.getGroup(groupId, {
-          signal: controller.signal,
-        });
-        if (!aborded) setGroup(data);
+        let data;
+
+        if (groupId) {
+          data = await api.getGroup(groupId, { signal: controller.signal });
+          if (!aborted) setGroup(data);
+        } else {
+          data = await api.getUsers();
+          if (!aborted)
+            setGroup({
+              group_number: null,
+              students: data,
+            });
+        }
       } catch (err) {
-        if (err.name === "AbortError") return;
-        if (!aborded) setError(err.message || String(err));
+        if (!aborted) setError(err.message || String(err));
       } finally {
-        if (!aborded) setLoading(false);
+        if (!aborted) setLoading(false);
       }
     }
+
     load();
     return () => {
-      aborded = true;
+      aborted = true;
       controller.abort();
     };
   }, [groupId]);
 
   // render
-  if (!groupId) return <div className="p-4">No id provided .</div>;
-  if (loading) return <div className="p-4">Loading . .</div>;
+  if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
-  if (!group) return <div className="p-4">No data found for id: {groupId}</div>;
+  if (!group) return <div className="p-4">No data</div>;
 
   return (
     <DashboardContainer>
       {/* Student Practice Days Section */}
       <PracticeDaysSection>
         <HeaderRow>
-          <SectionTitle>{group.group_number}-guruh talabalari</SectionTitle>
+          <SectionTitle>
+            {groupId
+              ? `${group.group_number}-guruh talabalari`
+              : "Barcha talabalar"}
+          </SectionTitle>
+
           <div
             style={{
               display: "flex",
@@ -314,7 +327,7 @@ export default function Students({ isDark = false, onThemeChange }) {
               height: "100%",
             }}
           >
-            <Counter>{group.students.length} ta talaba</Counter>
+            <Counter>{group.students?.length || 0} ta talaba</Counter>
           </div>
         </HeaderRow>
 

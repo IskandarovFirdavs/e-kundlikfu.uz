@@ -33,6 +33,11 @@ function AppContent() {
   // Login sahifasida navbar ko'rsatilmaydi
   const hideNavbar = location.pathname === "/";
 
+  const facultyAndDepartmentsPaths = ["/faculty/:id", "/departments"];
+  const departmentAndDirectionsPaths = ["/department/:id", "/directions"];
+  const directionAndGroupsPaths = ["/direction/:id", "/groups"];
+  const groupAndStudentsPaths = ["/group/:id", "/students"];
+
   return (
     <ThemeProvider theme={dark ? darkTheme : lightTheme}>
       <AppWrapper>
@@ -53,33 +58,6 @@ function AppContent() {
           />
           <Route path="/student/:id/day/:dayId" element={<PractiseDetail />} />
 
-          {/* ID bilan yo'llar */}
-          <Route
-            path="/faculty/:id"
-            element={
-              <PrivateRoute>
-                <Departments />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/department/:id"
-            element={
-              <PrivateRoute>
-                <Directions />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/direction/:id"
-            element={
-              <PrivateRoute>
-                <Groups />
-              </PrivateRoute>
-            }
-          />
-
           <Route
             path="/faculties"
             element={
@@ -89,14 +67,53 @@ function AppContent() {
             }
           />
 
-          <Route
-            path="/group/:id"
-            element={
-              <PrivateRoute>
-                <Students />
-              </PrivateRoute>
-            }
-          />
+          {/* ID bilan yo'llar */}
+
+          {facultyAndDepartmentsPaths.map((path) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <PrivateRoute>
+                  <Departments />
+                </PrivateRoute>
+              }
+            />
+          ))}
+          {departmentAndDirectionsPaths.map((path) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <PrivateRoute>
+                  <Directions />
+                </PrivateRoute>
+              }
+            />
+          ))}
+
+          {directionAndGroupsPaths.map((path) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <PrivateRoute>
+                  <Groups />
+                </PrivateRoute>
+              }
+            />
+          ))}
+          {groupAndStudentsPaths.map((path) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <PrivateRoute>
+                  <Students />
+                </PrivateRoute>
+              }
+            />
+          ))}
 
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Routes>

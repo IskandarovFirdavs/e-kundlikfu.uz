@@ -151,7 +151,7 @@ const CellIcon = styled.div`
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  background-color: ${(props) => props.bgColor || "#f59e0b"};
+  background-color: ${(props) => props.$bgColor || "#3B82F6"};
   color: white;
   flex-shrink: 0;
   font-weight: bold;
@@ -216,7 +216,7 @@ export default function Groups({ isDark = false, onThemeChange }) {
 
   const theme = isDark ? darkTheme : lightTheme;
   const navigate = useNavigate();
-  const [direction, setDirection] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -232,44 +232,46 @@ export default function Groups({ isDark = false, onThemeChange }) {
   }, [isDark]);
 
   useEffect(() => {
-    if (!directionId) return;
-    let aborded = false;
-    const controller = new AbortController();
+    let aborted = false;
 
     async function load() {
       setLoading(true);
       setError(null);
+
       try {
-        const data = await api.getDirection(directionId, {
-          signal: controller.signal,
-        });
-        if (!aborded) setDirection(data);
+        const result = directionId
+          ? await api.getDirection(directionId)
+          : await api.getGroups();
+        console.log(result);
+
+        if (!aborted) setData(result);
       } catch (err) {
-        if (err.name === "AbortError") return;
-        if (!aborded) setError(err.message || String(err));
+        if (!aborted) setError(err.message || String(err));
       } finally {
-        if (!aborded) setLoading(false);
+        if (!aborted) setLoading(false);
       }
     }
+
     load();
     return () => {
-      aborded = true;
-      controller.abort();
+      aborted = true;
     };
   }, [directionId]);
 
   // render
-  if (!directionId) return <div className="p-4">No id provided .</div>;
-  if (loading) return <div className="p-4">Loading . .</div>;
+  if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
-  if (!direction)
-    return <div className="p-4">No data found for id: {directionId}</div>;
+  if (!data) return <div className="p-4">No data found</div>;
+
+  const groups = directionId ? data?.groups || [] : data || [];
+
   return (
     <DashboardContainer>
       {/* Directions Section */}
       <DirectionsSection>
         <HeaderRow>
-          <SectionTitle>{direction.abbr} GURUHLARI</SectionTitle>
+          <SectionTitle>{data.abbr || data.name} GURUHLARI</SectionTitle>
+
           <div
             style={{
               display: "flex",
@@ -278,21 +280,21 @@ export default function Groups({ isDark = false, onThemeChange }) {
               height: "100%",
             }}
           >
-            <Counter>{direction.groups?.length || 0} ta guruh</Counter>
+            <Counter>{groups.length} ta guruh</Counter>
           </div>
         </HeaderRow>
-        {direction.groups?.length === 0 && (
+        {groups.length === 0 && (
           <p style={{ padding: "20px", color: theme.text }}>
             Hozircha guruhlar mavjud emas.
           </p>
         )}
-        {direction.groups?.map((grp) => (
+        {groups.map((grp) => (
           <DirectionRow
             key={grp.id}
             onClick={() => navigate(`/group/${grp.id}`)}
           >
             <TableCell>
-              <CellIcon bgColor="#3B82F6">
+              <CellIcon $bgColor="#3B82F6">
                 <HiMiniUserGroup />
               </CellIcon>
               <CellContent>

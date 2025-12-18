@@ -185,14 +185,29 @@ export default function Login({ dark, setDark }) {
     setLoading(true);
 
     try {
-      const data = await api.login(username, password);
-      navigate("/faculties");
+      await api.login(username, password);
+
+      // 👇 USERNI OLAMIZ
+      const user = await api.getCurrentUser();
+
+      // USERNI SAQLAYMIZ
+      localStorage.setItem("currentUser", JSON.stringify(user));
+
+      // 👇 ROLGA QARAB YO‘NALTIRISH
+      if (user.role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (user.role === "student") {
+        navigate("/student/dashboard");
+      } else {
+        navigate("/faculties"); // default
+      }
     } catch (err) {
       setError("Login yoki parol xato");
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <Wrapper>
       <Title>Tizimga Kirish</Title>
