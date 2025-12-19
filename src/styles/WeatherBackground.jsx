@@ -1,12 +1,77 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
-import styled, { keyframes } from "styled-components";
+import { useMemo, useState, useEffect } from "react";
+import styled, { keyframes, css } from "styled-components";
+import Santa from "../assets/santa.gif";
 
 const gradient = keyframes`
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+`;
+
+const snowfallNear = keyframes`
+  0% {
+    transform: translateY(-10px) translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(25vh) translateX(20px) rotate(90deg);
+  }
+  50% {
+    transform: translateY(50vh) translateX(-10px) rotate(180deg);
+  }
+  75% {
+    transform: translateY(75vh) translateX(30px) rotate(270deg);
+  }
+  100% {
+    transform: translateY(100vh) translateX(0) rotate(360deg);
+  }
+`;
+
+const snowfallMid = keyframes`
+  0% {
+    transform: translateY(-10px) translateX(0) rotate(0deg);
+  }
+  30% {
+    transform: translateY(30vh) translateX(-15px) rotate(120deg);
+  }
+  60% {
+    transform: translateY(60vh) translateX(15px) rotate(240deg);
+  }
+  100% {
+    transform: translateY(100vh) translateX(-5px) rotate(360deg);
+  }
+`;
+
+const snowfallFar = keyframes`
+  0% {
+    transform: translateY(-10px) translateX(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(50vh) translateX(10px) rotate(180deg);
+  }
+  100% {
+    transform: translateY(100vh) translateX(-10px) rotate(360deg);
+  }
+`;
+
+const flyAcross = keyframes`
+  0% {
+    left: 100%;
+    transform: translateX(0); /* start off-screen right */
+  }
+  50% {
+    left: 50%;
+    transform: translateX(-50%); /* slow mid-screen stop */
+  }
+  55% {
+    left: 50%;
+    transform: translateX(-50%); /* short pause */
+  }
+  100% {
+    left: -50%; /* fully exit left */
+    transform: translateX(0); /* no extra offset */
+  }
 `;
 
 const AppWrapper = styled.div`
@@ -42,7 +107,7 @@ const AppWrapper = styled.div`
     );
     background-size: 400% 400%;
     animation: ${gradient} 8s ease infinite;
-    z-index: -1;
+    z-index: 0;
     opacity: ${({ $dark }) => ($dark ? 0.8 : 0.4)};
     transition: opacity 0.5s ease;
   }
@@ -53,133 +118,177 @@ const AppWrapper = styled.div`
   }
 `;
 
-const SnowfallContainer = styled.div`
+const SnowContainer = styled.div`
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 0;
   pointer-events: none;
   overflow: hidden;
-`;
-
-const snowfall = keyframes`
-  0% {
-    transform: translateY(-10vh) translateX(0) rotate(0deg);
-  }
-  25% {
-    transform: translateY(25vh) translateX(10px) rotate(90deg);
-  }
-  50% {
-    transform: translateY(50vh) translateX(-5px) rotate(180deg);
-  }
-  75% {
-    transform: translateY(75vh) translateX(15px) rotate(270deg);
-  }
-  100% {
-    transform: translateY(110vh) translateX(0) rotate(360deg);
-  }
+  z-index: 1;
 `;
 
 const Snowflake = styled.div`
   position: absolute;
-  color: ${({ $color }) => $color};
+  color: ${({ $dark, $layer }) => {
+    if ($dark) {
+      return $layer === "near"
+        ? "#E2E8F0"
+        : $layer === "mid"
+        ? "#CBD5E1"
+        : "#94A3B8";
+    }
+    return $layer === "near"
+      ? "#DBEAFE"
+      : $layer === "mid"
+      ? "#BFDBFE"
+      : "#93C5FD";
+  }};
+  user-select: none;
+  cursor: default;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
   opacity: ${({ $opacity }) => $opacity};
-  font-size: ${({ $size }) => $size}px;
-  animation: ${snowfall} ${({ $duration }) => $duration}s linear infinite;
+  text-shadow: ${({ $dark, $layer }) =>
+    $dark && $layer === "near" ? "0 0 3px rgba(226, 232, 240, 0.5)" : "none"};
+
+  ${({ $layer }) => {
+    if ($layer === "near") {
+      return css`
+        font-size: clamp(18px, 2vw, 24px);
+        animation-name: ${css`
+          ${snowfallNear}
+        `};
+        filter: blur(0px);
+        z-index: 3;
+      `;
+    } else if ($layer === "mid") {
+      return css`
+        font-size: clamp(12px, 1.5vw, 16px);
+        animation-name: ${snowfallMid};
+        filter: blur(0.3px);
+        z-index: 2;
+      `;
+    } else {
+      return css`
+        font-size: clamp(8px, 1vw, 12px);
+        animation-name: ${snowfallFar};
+        filter: blur(0.8px);
+        z-index: 1;
+      `;
+    }
+  }}
+
+  animation-duration: ${({ $duration }) => $duration}s;
   animation-delay: ${({ $delay }) => $delay}s;
   left: ${({ $left }) => $left}%;
-  filter: blur(${({ $blur }) => $blur}px);
-  text-shadow: 0 0 ${({ $glow }) => $glow}px ${({ $color }) => $color};
-  user-select: none;
+  top: -10px;
 `;
 
-const snowflakeShapes = ["❄", "❅", "❆"];
+const FlyingGif = styled.img`
+  position: fixed;
+  top: 80%;
+  width: 250px;
+  height: auto;
+  z-index: 2;
+  pointer-events: none;
+  animation: ${flyAcross} 10s ease-in-out forwards;
+  display: ${({ $show }) => ($show ? "block" : "none")};
 
-function RealisticSnowfall({ dark = false }) {
-  const [windowSize, setWindowSize] = useState({ width: 1920, height: 1080 });
+  @media (max-width: 768px) {
+    width: 170px;
+  }
+`;
+
+export default function WeatherBackground({ children, dark = false }) {
+  const [showFlyingGif, setShowFlyingGif] = useState(false);
 
   useEffect(() => {
-    const updateSize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    const triggerAnimation = () => {
+      setShowFlyingGif(true);
+      setTimeout(() => {
+        setShowFlyingGif(false);
+      }, 10000); // Animation duration is 10s
     };
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
+
+    // Trigger immediately on mount
+    triggerAnimation();
+
+    // Then every 10 minutes (600000ms)
+    const interval = setInterval(triggerAnimation, 600000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const snowflakes = useMemo(() => {
-    const count = dark ? 100 : 60;
     const flakes = [];
+    const snowflakeChars = ["❄", "❅", "❆", "✻", "✼", "❄"];
+    const layers = dark
+      ? [
+          { name: "near", count: 15 },
+          { name: "mid", count: 25 },
+          { name: "far", count: 35 },
+        ]
+      : [
+          { name: "near", count: 8 },
+          { name: "mid", count: 15 },
+          { name: "far", count: 22 },
+        ];
 
-    for (let i = 0; i < count; i++) {
-      // Create layers of depth
-      const depth = Math.random();
-      const size =
-        depth < 0.3
-          ? 8 + Math.random() * 8
-          : // Far (small)
-          depth < 0.6
-          ? 12 + Math.random() * 12
-          : // Mid
-            16 + Math.random() * 16; // Near (large)
-
-      const opacity = dark
-        ? 0.3 + depth * 0.7 // 0.3 to 1.0 for dark mode
-        : 0.2 + depth * 0.5; // 0.2 to 0.7 for light mode
-
-      const blur = depth < 0.3 ? 1.5 : depth < 0.6 ? 0.8 : 0.2;
-      const glow = dark ? (depth > 0.6 ? 2 : 0) : 0;
-
-      // More variation in duration for realistic falling
-      const duration = dark
-        ? 8 + Math.random() * 12 + (1 - depth) * 10 // 8-30s, slower for distant
-        : 10 + Math.random() * 15 + (1 - depth) * 10; // 10-35s
-
-      flakes.push({
-        id: i,
-        shape:
-          snowflakeShapes[Math.floor(Math.random() * snowflakeShapes.length)],
-        left: Math.random() * 100,
-        size,
-        duration,
-        delay: -Math.random() * 20, // Start at different positions
-        opacity,
-        blur,
-        glow,
-        color: dark ? "#E2E8F0" : "#90CDF4",
-      });
-    }
+    layers.forEach(({ name, count }) => {
+      for (let i = 0; i < count; i++) {
+        flakes.push({
+          id: `${name}-${i}`,
+          char: snowflakeChars[
+            Math.floor(Math.random() * snowflakeChars.length)
+          ],
+          layer: name,
+          left: Math.random() * 100,
+          duration:
+            name === "near"
+              ? 8 + Math.random() * 4
+              : name === "mid"
+              ? 12 + Math.random() * 6
+              : 15 + Math.random() * 8,
+          delay: -Math.random() * 20,
+          opacity:
+            name === "near"
+              ? 0.7 + Math.random() * 0.3
+              : name === "mid"
+              ? 0.5 + Math.random() * 0.3
+              : 0.3 + Math.random() * 0.3,
+        });
+      }
+    });
 
     return flakes;
-  }, [dark, windowSize.width]);
+  }, [dark]);
 
-  return (
-    <SnowfallContainer>
-      {snowflakes.map((flake) => (
-        <Snowflake
-          key={flake.id}
-          $left={flake.left}
-          $size={flake.size}
-          $duration={flake.duration}
-          $delay={flake.delay}
-          $opacity={flake.opacity}
-          $blur={flake.blur}
-          $glow={flake.glow}
-          $color={flake.color}
-        >
-          {flake.shape}
-        </Snowflake>
-      ))}
-    </SnowfallContainer>
-  );
-}
-
-export default function WeatherBackground({ children, dark = false }) {
   return (
     <AppWrapper $dark={dark}>
-      <RealisticSnowfall dark={dark} />
+      <SnowContainer>
+        {snowflakes.map((flake) => (
+          <Snowflake
+            key={flake.id}
+            $dark={dark}
+            $layer={flake.layer}
+            $left={flake.left}
+            $duration={flake.duration}
+            $delay={flake.delay}
+            $opacity={flake.opacity}
+          >
+            {flake.char}
+          </Snowflake>
+        ))}
+      </SnowContainer>
+
+      <FlyingGif
+        src={Santa}
+        alt="Flying animation"
+        $show={showFlyingGif}
+        key={showFlyingGif ? "show" : "hide"} // Force re-animation
+      />
 
       {children}
     </AppWrapper>
