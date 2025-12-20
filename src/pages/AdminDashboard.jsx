@@ -128,13 +128,8 @@ const SidebarHeader = styled.div`
 const AppTitle = styled.h1`
   font-size: 1.75rem;
   font-weight: 700;
-  background: linear-gradient(
-    135deg,
-    ${(p) => p.theme.primary},
-    ${(p) => p.theme.secondary || "#667eea"}
-  );
+
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   margin: 0;
   display: flex;
   align-items: center;
@@ -1055,35 +1050,45 @@ export default function AdminDashboard() {
 
   // Menu Items - Added reports
   const menuItems = [
-    { id: "users", label: "Users", icon: <FaUser />, path: "/admin/users" },
+    {
+      id: "users",
+      label: "Foydalanuvchilar",
+      icon: <FaUser />,
+      path: "/admin/users",
+    },
     {
       id: "faculties",
-      label: "Faculties",
+      label: "Fakultetlar",
       icon: <FaUniversity />,
       path: "/admin/faculties",
     },
     {
       id: "departments",
-      label: "Departments",
+      label: "Kafedralar",
       icon: <FaBuilding />,
       path: "/admin/departments",
     },
     {
       id: "directions",
-      label: "Directions",
+      label: "Yo'nalishlar",
       icon: <FaDirections />,
       path: "/admin/directions",
     },
-    { id: "groups", label: "Groups", icon: <FaUsers />, path: "/admin/groups" },
+    {
+      id: "groups",
+      label: "Guruhlar",
+      icon: <FaUsers />,
+      path: "/admin/groups",
+    },
     {
       id: "practices",
-      label: "Practice Days",
+      label: "Amalyot kunlari",
       icon: <FaCalendarAlt />,
       path: "/admin/practices",
     },
     {
       id: "reports",
-      label: "Reports",
+      label: "Hisobotlar",
       icon: <FaFileAlt />,
       path: "/admin/reports",
     },
@@ -1252,7 +1257,7 @@ export default function AdminDashboard() {
             // Reports are read-only
             break;
         }
-        setSuccess(`${getFormTemplate()?.title} updated successfully!`);
+        setSuccess(`${getFormTemplate()?.title} muvaffaqiyatli yangilandi!`);
       } else {
         // Create
         switch (activeMenu) {
@@ -1278,7 +1283,7 @@ export default function AdminDashboard() {
             // Reports are read-only
             break;
         }
-        setSuccess(`${getFormTemplate()?.title} created successfully!`);
+        setSuccess(`${getFormTemplate()?.title} muvaffaqiyatli yaratildi!`);
       }
 
       setShowModal(false);
@@ -1327,7 +1332,7 @@ export default function AdminDashboard() {
           break;
       }
 
-      setSuccess(`${getFormTemplate()?.title} deleted successfully!`);
+      setSuccess(`${getFormTemplate()?.title} muvaffaqiyatli o'chirildi!`);
       setShowDeleteModal(false);
       setDeleteItemId(null);
       // Clear cache and refetch
@@ -1363,29 +1368,31 @@ export default function AdminDashboard() {
     fetchReportDetail(reportId);
   };
 
-  // Handle download report
+  // Hisobotni yuklab olish
   const handleDownloadReport = (report) => {
     const reportText = `
-STUDENT INFORMATION
+TALABA MA’LUMOTLARI
 ===================
-Student ID: ${report.student?.id || "N/A"}
-First Name: ${report.student?.first_name || "N/A"}
-Last Name: ${report.student?.last_name || "N/A"}
-Group: ${report.student?.group || "N/A"}
-Direction: ${report.student?.direction || "N/A"}
+Talaba ID: ${report.student?.id || "Mavjud emas"}
+Ismi: ${report.student?.first_name || "Mavjud emas"}
+Familiyasi: ${report.student?.last_name || "Mavjud emas"}
+Guruh: ${report.student?.group || "Mavjud emas"}
+Yo‘nalish: ${report.student?.direction || "Mavjud emas"}
 
-REPORT DETAILS
-==============
-Practise Day ID: ${report.practice_day || "N/A"}
-Text:
-${report.text || "N/A"}
+HISOBOT MA’LUMOTLARI
+===================
+Amaliyot kuni ID: ${report.practice_day || "Mavjud emas"}
+Matn:
+${report.text || "Mavjud emas"}
 
-Created At: ${
-      report.created_at ? new Date(report.created_at).toLocaleString() : "N/A"
+Yaratilgan sana: ${
+      report.created_at
+        ? new Date(report.created_at).toLocaleString()
+        : "Mavjud emas"
     }
 ${
   report.updated_at
-    ? `Last Updated: ${new Date(report.updated_at).toLocaleString()}`
+    ? `Oxirgi yangilanish: ${new Date(report.updated_at).toLocaleString()}`
     : ""
 }
 `;
@@ -1529,53 +1536,53 @@ ${
       users: [
         { key: "id", label: "ID", sortable: true },
         { key: "username", label: "Username", sortable: true },
-        { key: "first_name", label: "First Name", sortable: true },
-        { key: "last_name", label: "Last Name", sortable: true },
-        { key: "role", label: "Role", sortable: true },
-        { key: "attached_teacher", label: "Teacher", sortable: true },
-        { key: "group", label: "Group", sortable: true },
-        { key: "actions", label: "Actions", sortable: false },
+        { key: "first_name", label: "Ism", sortable: true },
+        { key: "last_name", label: "Familiya", sortable: true },
+        { key: "role", label: "Roli", sortable: true },
+        { key: "attached_teacher", label: "O'qituvchi", sortable: true },
+        { key: "group", label: "Guruh", sortable: true },
+        { key: "actions", label: "Amallar", sortable: false },
       ],
       faculties: [
         { key: "id", label: "ID", sortable: true },
-        { key: "name", label: "Name", sortable: true },
-        { key: "head_id", label: "Head", sortable: true },
-        { key: "vice_id", label: "Vice", sortable: true },
-        { key: "actions", label: "Actions", sortable: false },
+        { key: "name", label: "Nomi", sortable: true },
+        { key: "head_id", label: "Dekan", sortable: true },
+        { key: "vice_id", label: "Zam dekan", sortable: true },
+        { key: "actions", label: "Amallar", sortable: false },
       ],
       departments: [
         { key: "id", label: "ID", sortable: true },
-        { key: "name", label: "Name", sortable: true },
-        { key: "abbr", label: "Code", sortable: true },
-        { key: "faculty_id", label: "Faculty", sortable: true },
-        { key: "head_id", label: "Head", sortable: true },
-        { key: "actions", label: "Actions", sortable: false },
+        { key: "name", label: "Nomi", sortable: true },
+        { key: "abbr", label: "Abbr", sortable: true },
+        { key: "faculty_id", label: "Fakultet", sortable: true },
+        { key: "head_id", label: "Dekan", sortable: true },
+        { key: "actions", label: "Amallar", sortable: false },
       ],
       directions: [
         { key: "id", label: "ID", sortable: true },
-        { key: "name", label: "Name", sortable: true },
-        { key: "department_id", label: "Department", sortable: true },
-        { key: "actions", label: "Actions", sortable: false },
+        { key: "name", label: "Nomi", sortable: true },
+        { key: "department_id", label: "Kafedra", sortable: true },
+        { key: "actions", label: "Amallar", sortable: false },
       ],
       groups: [
         { key: "id", label: "ID", sortable: true },
-        { key: "group_number", label: "Group", sortable: true },
-        { key: "direction_id", label: "Direction", sortable: true },
-        { key: "actions", label: "Actions", sortable: false },
+        { key: "group_number", label: "Guruh", sortable: true },
+        { key: "direction_id", label: "Yo'nalish", sortable: true },
+        { key: "actions", label: "Amallar", sortable: false },
       ],
       practices: [
         { key: "id", label: "ID", sortable: true },
-        { key: "student", label: "Student", sortable: true },
-        { key: "date", label: "Date", sortable: true },
-        { key: "org_name", label: "Organization", sortable: true },
-        { key: "duty_name", label: "Duty", sortable: true },
+        { key: "student", label: "Talaba", sortable: true },
+        { key: "date", label: "Sana", sortable: true },
+        { key: "org_name", label: "Tashkilot", sortable: true },
+        { key: "duty_name", label: "Mas’ul shaxs", sortable: true },
         { key: "status", label: "Status", sortable: true },
-        { key: "actions", label: "Actions", sortable: false },
+        { key: "actions", label: "Amallar", sortable: false },
       ],
       reports: [
         { key: "id", label: "ID", sortable: true },
-        { key: "created_at", label: "Created", sortable: true },
-        { key: "actions", label: "Actions", sortable: false },
+        { key: "created_at", label: "Yaratilgan", sortable: true },
+        { key: "actions", label: "Amallar", sortable: false },
       ],
     };
 
@@ -1639,39 +1646,39 @@ ${
         { name: "username", label: "Username", type: "text", required: true },
         {
           name: "first_name",
-          label: "First Name",
+          label: "Ism",
           type: "text",
           required: true,
         },
-        { name: "last_name", label: "Last Name", type: "text", required: true },
+        { name: "last_name", label: "Familiya", type: "text", required: true },
         {
           name: "role",
-          label: "Role",
+          label: "Roli",
           type: "select",
           required: true,
           options: [
             { value: "admin", label: "Admin" },
-            { value: "rector", label: "Rector" },
-            { value: "vice_rector", label: "Vice Rector" },
-            { value: "dean", label: "Dean" },
-            { value: "deputy_dean", label: "Deputy Dean" },
-            { value: "head_of_department", label: "Head of Department" },
-            { value: "teacher", label: "Teacher" },
-            { value: "student", label: "Student" },
+            { value: "rector", label: "Rektor" },
+            { value: "vice_rector", label: "Rektor o'rinbosari" },
+            { value: "dean", label: "Dekan" },
+            { value: "deputy_dean", label: "Zam dekan" },
+            { value: "head_of_department", label: "Kafedra mudiri" },
+            { value: "teacher", label: "O'qituvchi" },
+            { value: "student", label: "Talaba" },
           ],
         },
         ...(formData?.role === "student"
           ? [
               {
                 name: "attached_teacher",
-                label: "Teacher",
+                label: "O'qituvchi",
                 type: "select",
                 required: true,
                 options: teacherOptions,
               },
               {
                 name: "group",
-                label: "Group",
+                label: "Guruh",
                 type: "select",
                 required: true,
                 options: groupOptions,
@@ -1687,17 +1694,17 @@ ${
         },
       ],
       faculties: [
-        { name: "name", label: "Faculty Name", type: "text", required: true },
+        { name: "name", label: "Fakultet nomi", type: "text", required: true },
         {
           name: "head_id",
-          label: "Head",
+          label: "Dekan",
           type: "select",
           required: true,
           options: userOptions.filter((u) => u.role === "dean"),
         },
         {
           name: "vice_id",
-          label: "Vice Head",
+          label: "Zam dekan",
           type: "select",
           required: false,
           options: userOptions.filter((u) => u.role === "deputy_dean"),
@@ -1706,31 +1713,31 @@ ${
       departments: [
         {
           name: "name",
-          label: "Department Name",
+          label: "Kafedra nomi",
           type: "text",
           required: true,
         },
         { name: "abbr", label: "Abbreviation", type: "text", required: false },
         {
           name: "faculty_id",
-          label: "Faculty",
+          label: "Fakultet",
           type: "select",
           required: true,
           options: facultyOptions,
         },
         {
           name: "head_id",
-          label: "Head",
+          label: "Kafedra mudiri",
           type: "select",
           required: true,
           options: userOptions.filter((u) => u.role === "head_of_department"),
         },
       ],
       directions: [
-        { name: "name", label: "Direction Name", type: "text", required: true },
+        { name: "name", label: "Yo'nalish nomi", type: "text", required: true },
         {
           name: "department_id",
-          label: "Department",
+          label: "Kafedra",
           type: "select",
           required: true,
           options: departmentOptions,
@@ -1739,13 +1746,13 @@ ${
       groups: [
         {
           name: "group_number",
-          label: "Group Number",
+          label: "Guruh nomi",
           type: "text",
           required: true,
         },
         {
           name: "direction_id",
-          label: "Direction",
+          label: "Yo'nalish",
           type: "select",
           required: true,
           options: directionOptions,
@@ -1754,35 +1761,45 @@ ${
       practices: [
         {
           name: "student",
-          label: "Student",
+          label: "Talaba",
           type: "select",
           required: true,
           options: studentOptions,
         },
-        { name: "date", label: "Date", type: "date", required: true },
-        { name: "duty_name", label: "Duty Name", type: "text", required: true },
+        { name: "date", label: "Sana", type: "date", required: true },
         {
-          name: "org_name",
-          label: "Organization Name",
+          name: "duty_name",
+          label: "Mas'ul shaxs",
           type: "text",
           required: true,
         },
-        { name: "address", label: "Address", type: "text", required: true },
+        {
+          name: "org_name",
+          label: "Tashkilot nomi",
+          type: "text",
+          required: true,
+        },
+        { name: "address", label: "Manzil", type: "text", required: true },
         {
           name: "location",
-          label: "Location",
+          label: "Lokatsiya",
           type: "text",
           required: true,
           placeholder: "POINT(00.0000 00.0000)",
         },
-        { name: "target", label: "Target", type: "textarea", required: true },
+        { name: "target", label: "Mo'ljal", type: "textarea", required: true },
         {
           name: "start_time",
-          label: "Start Time",
+          label: "Boshlanish vaqti",
           type: "time",
           required: true,
         },
-        { name: "end_time", label: "End Time", type: "time", required: true },
+        {
+          name: "end_time",
+          label: "Tugash vaqti",
+          type: "time",
+          required: true,
+        },
       ],
       reports: [], // Reports are read-only, no form fields
     };
@@ -1922,7 +1939,7 @@ ${
                     (field.options && field.options.length === 0)
                   }
                 >
-                  <option value="">Select {field.label}</option>
+                  <option value="">{field.label}ni tanlang</option>
                   {field.options?.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -1962,7 +1979,7 @@ ${
             onClick={() => setShowModal(false)}
             disabled={isSubmitting}
           >
-            Cancel
+            Bekor qilish
           </SecondaryButton>
           <ActionButton type="submit" disabled={isSubmitting}>
             {isSubmitting ? (
@@ -1973,12 +1990,12 @@ ${
                     marginRight: "8px",
                   }}
                 />
-                Saving...
+                Saqlanmoqda...
               </>
             ) : (
               <>
                 <FaSave />
-                {editingItem ? "Update" : "Create"}
+                {editingItem ? "Yangilash" : "Yaratish"}
               </>
             )}
           </ActionButton>
@@ -2143,12 +2160,12 @@ ${
           <div style={{ display: "flex", gap: "12px" }}>
             <RefreshButton onClick={() => fetchData(true)} disabled={loading}>
               <FaSync />
-              Refresh
+              Yangilash
             </RefreshButton>
             {activeMenu !== "reports" && (
               <ActionButton onClick={handleAddNew}>
                 <FaPlus />
-                Add New
+                Yangi qo'shish
               </ActionButton>
             )}
           </div>
@@ -2174,7 +2191,7 @@ ${
           <SearchBox>
             <FaSearch size={16} />
             <SearchInput
-              placeholder={`Search ${activeMenu}...`}
+              placeholder="Qidirish..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -2186,7 +2203,7 @@ ${
           {loading ? (
             <LoadingSpinner>
               <FaSpinner size={32} />
-              <div style={{ marginTop: "16px" }}>Loading...</div>
+              <div style={{ marginTop: "16px" }}>Yuklanmoqda...</div>
             </LoadingSpinner>
           ) : (
             <>
@@ -2335,11 +2352,11 @@ ${
                               marginBottom: "8px",
                             }}
                           >
-                            No {activeMenu} found
+                            Hech qanday {activeMenu} topilmadi
                           </div>
                           {searchQuery && (
                             <div>
-                              No results matching "
+                              Hech qanday natija topilmadi "
                               <strong>{searchQuery}</strong>"
                             </div>
                           )}
@@ -2354,16 +2371,20 @@ ${
               {sortedData.length > 0 && (
                 <Pagination>
                   <PaginationInfo>
-                    Showing {startIndex + 1} to{" "}
-                    {Math.min(startIndex + itemsPerPage, sortedData.length)} of{" "}
-                    {sortedData.length} entries
+                    {sortedData.length > 0 && (
+                      <PaginationInfo>
+                        {startIndex + 1}-
+                        {Math.min(startIndex + itemsPerPage, sortedData.length)}{" "}
+                        dan {sortedData.length} ko'rsatilmoqda
+                      </PaginationInfo>
+                    )}
                   </PaginationInfo>
                   <PaginationControls>
                     <PageButton
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage(currentPage - 1)}
                     >
-                      Previous
+                      Oldingi
                     </PageButton>
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum;
@@ -2391,7 +2412,7 @@ ${
                       disabled={currentPage === totalPages}
                       onClick={() => setCurrentPage(currentPage + 1)}
                     >
-                      Next
+                      Keyingi
                     </PageButton>
                   </PaginationControls>
                 </Pagination>
@@ -2432,7 +2453,7 @@ ${
           >
             <ModalHeader>
               <ModalTitle>
-                <FaFileAlt /> Report Details
+                <FaFileAlt /> Hisobot tafsilotlari
               </ModalTitle>
               <ModalCloseButton
                 onClick={() => setShowReportDetail(false)}
@@ -2445,7 +2466,7 @@ ${
               <LoadingSpinner>
                 <FaSpinner size={32} />
                 <div style={{ marginTop: "16px" }}>
-                  Loading report details...
+                  Hisobot tafsilotlari yuklanmoqda...
                 </div>
               </LoadingSpinner>
             ) : (
@@ -2464,16 +2485,16 @@ ${
                 <FaExclamationCircle />
               </DeleteIcon>
               <DeleteText>
-                Are you sure you want to delete this{" "}
-                {getFormTemplate()?.title.toLowerCase()}? This action cannot be
-                undone.
+                Haqiqatan ham buni oʻchirib tashlamoqchimisiz{" "}
+                {getFormTemplate()?.title.toLowerCase()}? Bu amalni ortga
+                qaytarib bo‘lmaydi.
               </DeleteText>
               <DeleteActions>
                 <SecondaryButton
                   onClick={() => !isDeleting && setShowDeleteModal(false)}
                   disabled={isDeleting}
                 >
-                  Cancel
+                  Bekor qilish
                 </SecondaryButton>
                 <DeleteButton onClick={handleDelete} disabled={isDeleting}>
                   {isDeleting ? (
@@ -2484,10 +2505,10 @@ ${
                           marginRight: "8px",
                         }}
                       />
-                      Deleting...
+                      Oʻchirilmoqda...
                     </>
                   ) : (
-                    "Delete"
+                    "Oʻchirish"
                   )}
                 </DeleteButton>
               </DeleteActions>
