@@ -2013,11 +2013,11 @@ ${
       <ReportDetailContainer>
         <ReportSection>
           <ReportSectionTitle>
-            <FaUser /> Student Information
+            <FaUser /> Talaba ma'lumotlari
           </ReportSectionTitle>
           <ReportField>
             <ReportLabel>
-              Student ({selectedReport.student?.id || ""}):
+              Talaba ({selectedReport.student?.id || ""}):
             </ReportLabel>
             <ReportValue>
               {selectedReport.student?.first_name || ""}{" "}
@@ -2025,7 +2025,7 @@ ${
             </ReportValue>
           </ReportField>
           <ReportField>
-            <ReportLabel>Group:</ReportLabel>
+            <ReportLabel>Guruh:</ReportLabel>
             <ReportValue>{selectedReport.student?.group || "N/A"}</ReportValue>
           </ReportField>
           <ReportField>
@@ -2038,25 +2038,25 @@ ${
 
         <ReportSection>
           <ReportSectionTitle>
-            <FaFileAlt /> Report Details
+            <FaFileAlt /> Hisobot tafsilotlari
           </ReportSectionTitle>
           <ReportField>
-            <ReportLabel>Practise Day ID:</ReportLabel>
+            <ReportLabel>Amaliyot kuni ID:</ReportLabel>
             <ReportValue>{selectedReport.practice_day || "N/A"}</ReportValue>
           </ReportField>
           <ReportField>
-            <ReportLabel>Text:</ReportLabel>
+            <ReportLabel>Matn:</ReportLabel>
             <ReportValue>{selectedReport.text || "N/A"}</ReportValue>
           </ReportField>
           <ReportField>
-            <ReportLabel>Created:</ReportLabel>
+            <ReportLabel>Yaratilgan vaqt:</ReportLabel>
             <ReportValue>
               {new Date(selectedReport.created_at).toLocaleString()}
             </ReportValue>
           </ReportField>
           {selectedReport.updated_at && (
             <ReportField>
-              <ReportLabel>Last Updated:</ReportLabel>
+              <ReportLabel>Oxirgi yangilangan :</ReportLabel>
               <ReportValue>
                 {new Date(selectedReport.updated_at).toLocaleString()}
               </ReportValue>
@@ -2100,7 +2100,7 @@ ${
         {selectedReport.content && (
           <ReportSection>
             <ReportSectionTitle>
-              <FaEdit /> Report Content
+              <FaEdit /> Hisobot mazmuni
             </ReportSectionTitle>
             <ReportTextArea>{selectedReport.content}</ReportTextArea>
           </ReportSection>
@@ -2109,7 +2109,7 @@ ${
         {selectedReport.additional_info && (
           <ReportSection>
             <ReportSectionTitle>
-              <FaInfoCircle /> Additional Information
+              <FaInfoCircle /> Qo'shimcha ma'lumot
             </ReportSectionTitle>
             <ReportTextArea>{selectedReport.additional_info}</ReportTextArea>
           </ReportSection>
