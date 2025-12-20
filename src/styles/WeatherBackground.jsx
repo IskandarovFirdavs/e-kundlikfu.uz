@@ -211,7 +211,7 @@ export default function WeatherBackground({ children, dark = false }) {
       setShowFlyingGif(true);
       setTimeout(() => {
         setShowFlyingGif(false);
-      }, 10000); // Animation duration is 10s
+      }, 100000); // Animation duration is 100s
     };
 
     // Trigger immediately on mount
@@ -225,7 +225,7 @@ export default function WeatherBackground({ children, dark = false }) {
 
   const snowflakes = useMemo(() => {
     const flakes = [];
-    const snowflakeChars = ["❄", "❅", "❆", "✻", "✼", "❄"];
+    const snowflakeChars = ["❄", "❅", "❄", "❅"];
     const layers = dark
       ? [
           { name: "near", count: 15 },

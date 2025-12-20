@@ -15,8 +15,6 @@ const Wrapper = styled.div`
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: ${(p) => p.theme.bg};
-  color: ${(p) => p.theme.text};
   transition: 0.3s ease;
 
   @media (max-width: 600px) {
