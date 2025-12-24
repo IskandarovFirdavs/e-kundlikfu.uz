@@ -1373,7 +1373,6 @@ export default function AdminDashboard() {
     const reportText = `
 TALABA MA’LUMOTLARI
 ===================
-Talaba ID: ${report.student?.id || "Mavjud emas"}
 Ismi: ${report.student?.first_name || "Mavjud emas"}
 Familiyasi: ${report.student?.last_name || "Mavjud emas"}
 Guruh: ${report.student?.group || "Mavjud emas"}
@@ -1381,7 +1380,6 @@ Yo‘nalish: ${report.student?.direction || "Mavjud emas"}
 
 HISOBOT MA’LUMOTLARI
 ===================
-Amaliyot kuni ID: ${report.practice_day || "Mavjud emas"}
 Matn:
 ${report.text || "Mavjud emas"}
 
@@ -2016,9 +2014,7 @@ ${
             <FaUser /> Talaba ma'lumotlari
           </ReportSectionTitle>
           <ReportField>
-            <ReportLabel>
-              Talaba ({selectedReport.student?.id || ""}):
-            </ReportLabel>
+            <ReportLabel>Talaba:</ReportLabel>
             <ReportValue>
               {selectedReport.student?.first_name || ""}{" "}
               {selectedReport.student?.last_name || ""}
@@ -2040,10 +2036,6 @@ ${
           <ReportSectionTitle>
             <FaFileAlt /> Hisobot tafsilotlari
           </ReportSectionTitle>
-          <ReportField>
-            <ReportLabel>Amaliyot kuni ID:</ReportLabel>
-            <ReportValue>{selectedReport.practice_day || "N/A"}</ReportValue>
-          </ReportField>
           <ReportField>
             <ReportLabel>Matn:</ReportLabel>
             <ReportValue>{selectedReport.text || "N/A"}</ReportValue>

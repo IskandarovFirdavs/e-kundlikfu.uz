@@ -156,7 +156,7 @@ const TableCell = styled.div`
   @media (max-width: 480px) {
     gap: 8px;
     font-size: 13px;
-    width: 100%;
+    width: 90vw;
   }
 `;
 
@@ -214,7 +214,7 @@ const CellLabel = styled.span`
 
 const CellValue = styled.span`
   font-weight: 600;
-  display: block;
+  display: flex;
   font-size: 15px;
 
   @media (max-width: 768px) {

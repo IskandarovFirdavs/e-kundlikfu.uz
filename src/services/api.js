@@ -1,30 +1,50 @@
-const API_BASE_URL =
-  window.location.hostname === "localhost"
-    ? "" // Vite proxy ishlatadi
-    : "https://api.e-kundalikfu.uz";
+// API.js - GitHub Pages va local development uchun optimallashtirilgan
+const isLocalDevelopment =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
+
+// Base URL ni aniqlash
+const API_BASE_URL = isLocalDevelopment
+  ? "" // Localda Vite proxy ishlatadi
+  : "https://api.e-kundalikfu.uz"; // Productionda to'g'ridan backendga
 
 class API {
   constructor() {
     this.token = localStorage.getItem("authToken") || "";
+    console.log("API initialized with base URL:", API_BASE_URL);
+    console.log("Is local development?", isLocalDevelopment);
   }
-  // API.js ichida
+
+  // Rasm URL ni olish - GitHub Pages uchun optimallashtirilgan
   getImageUrl(path) {
     if (!path) return "";
 
-    // agar backend to‘liq URL qaytargan bo‘lsa
+    // Agar backend to'liq URL qaytargan bo'lsa
     if (path.startsWith("http")) {
       return path;
     }
 
-    // MEDIA uchun proxy orqali
+    // GitHub Pages uchun to'liq URL qaytarish
+    if (!isLocalDevelopment) {
+      // Productionda to'g'ridan backend URL bilan
+      return `https://api.e-kundalikfu.uz${
+        path.startsWith("/") ? path : `/${path}`
+      }`;
+    }
+
+    // Localda proxy orqali
     return path.startsWith("/") ? path : `/${path}`;
   }
 
-  // Umumiy so'rov metod
+  // Umumiy so'rov metod - CORS va error handling bilan
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
 
+    console.log(`API Request: ${options.method || "GET"} ${url}`);
+
     const config = {
+      mode: "cors", // CORS mode ni faollashtirish
+      credentials: isLocalDevelopment ? "same-origin" : "include", // Cookie lar uchun
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
@@ -40,32 +60,69 @@ class API {
     try {
       const response = await fetch(url, config);
 
-      // 401 xatosi bo'lsa
+      console.log(`API Response: ${response.status} ${response.statusText}`);
+
+      // 401 xatosi bo'lsa (token eskirgan)
       if (response.status === 401) {
+        console.warn("Token expired or invalid, clearing token");
         this.clearToken();
         throw new Error("Authentication failed. Please login again.");
       }
 
+      // 403 xatosi bo'lsa (ruxsat yo'q)
+      if (response.status === 403) {
+        throw new Error("You don't have permission to access this resource.");
+      }
+
       if (!response.ok) {
-        throw new Error(`HTTP xatolik! Status: ${response.status}`);
+        let errorMessage = `HTTP error! Status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch (e) {
+          // JSON parse qilish mumkin bo'lmasa, text olish
+          const errorText = await response.text();
+          if (errorText) errorMessage = errorText;
+        }
+        throw new Error(errorMessage);
       }
 
       // JSON response ni olish
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
-        return await response.json();
+        const data = await response.json();
+        console.log("API Response data:", data);
+        return data;
       } else {
+        console.log("API Response: non-JSON response");
         return { success: true };
       }
     } catch (error) {
+      console.error("API Request Error:", error);
+
       // CORS xatosini aniqlash
       if (
         error.name === "TypeError" &&
         error.message.includes("Failed to fetch")
       ) {
-        throw new Error(
-          "CORS xatosi: Serverga ulanib bo'lmadi. Backend CORS sozlamalarini tekshiring."
+        const corsError = new Error(
+          `CORS error: Cannot connect to server at ${API_BASE_URL}. ` +
+            `Please check: 1) Backend server is running, 2) CORS is enabled, ` +
+            `3) Your network connection`
         );
+        console.error(corsError.message);
+        throw corsError;
+      }
+
+      // Network xatosini aniqlash
+      if (
+        error.name === "TypeError" &&
+        error.message.includes("NetworkError")
+      ) {
+        const networkError = new Error(
+          "Network error: Please check your internet connection"
+        );
+        throw networkError;
       }
 
       throw error;
@@ -76,51 +133,98 @@ class API {
   setToken(token) {
     this.token = token;
     localStorage.setItem("authToken", token);
+    console.log("Token saved to localStorage");
   }
 
   // Token ni o'chirish
   clearToken() {
     this.token = "";
     localStorage.removeItem("authToken");
-    // Login sahifasiga yo'naltirish
-    if (window.location.pathname !== "/") {
-      window.location.href = "/";
+    console.log("Token cleared from localStorage");
+
+    // GitHub Pages uchun to'g'ri redirect
+    const currentPath = window.location.pathname;
+    const isGitHubPages = window.location.hostname.includes("github.io");
+
+    if (
+      currentPath !== "/" &&
+      currentPath !== "/e-maktab/" &&
+      currentPath !== "/e-maktab"
+    ) {
+      if (isGitHubPages) {
+        window.location.href = "/e-maktab/"; // GitHub Pages uchun
+      } else {
+        window.location.href = "/"; // Local uchun
+      }
     }
   }
 
   // Token mavjudligini tekshirish
   hasToken() {
-    return !!this.token;
+    const hasToken = !!this.token;
+    console.log("Token exists?", hasToken);
+    return hasToken;
+  }
+
+  // Token ni tekshirish (valid yoki yo'q)
+  async validateToken() {
+    if (!this.token) {
+      return false;
+    }
+
+    try {
+      await this.getCurrentUser();
+      return true;
+    } catch (error) {
+      console.warn("Token validation failed:", error);
+      return false;
+    }
   }
 
   // =============================================
-  // USERS API
+  // USERS API - Optimallashtirilgan
   // =============================================
 
-  // LOGIN
+  // LOGIN - CORS uchun optimallashtirilgan
   async login(username, password) {
-    const response = await fetch(`${API_BASE_URL}/users/login/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, password }),
-    });
+    const url = `${API_BASE_URL}/users/login/`;
+    console.log("Login attempt to:", url);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Login failed: ${errorText}`);
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      console.log("Login response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Login failed:", errorText);
+        throw new Error(`Login failed: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("Login successful, response:", data);
+
+      // Token ni saqlash
+      if (data.access_token) {
+        this.setToken(data.access_token);
+        console.log("Access token saved");
+      } else if (data.token) {
+        this.setToken(data.token);
+        console.log("Token saved");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
     }
-
-    const data = await response.json();
-
-    // Token ni saqlash
-    if (data.access_token) {
-      // <-- access_token ishlatiladi
-      this.setToken(data.access_token);
-    }
-
-    return data;
   }
 
   // CURRENT USER PROFILE
@@ -131,6 +235,7 @@ class API {
   // LOGOUT
   async logout() {
     this.clearToken();
+    console.log("User logged out");
     return { success: true };
   }
 
@@ -138,9 +243,6 @@ class API {
   async createUser(userData) {
     return this.request("/users/users/", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(userData),
     });
   }
@@ -159,9 +261,6 @@ class API {
   async updateUser(userId, userData) {
     return this.request(`/users/users/${userId}/`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(userData),
     });
   }
@@ -170,9 +269,6 @@ class API {
   async partialUpdateUser(userId, userData) {
     return this.request(`/users/users/${userId}/`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(userData),
     });
   }
@@ -197,9 +293,6 @@ class API {
   async createFaculty(facultyData) {
     return this.request("/university/faculties/", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(facultyData),
     });
   }
@@ -213,9 +306,6 @@ class API {
   async updateFaculty(facultyId, facultyData) {
     return this.request(`/university/faculties/${facultyId}/`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(facultyData),
     });
   }
@@ -224,9 +314,6 @@ class API {
   async partialUpdateFaculty(facultyId, facultyData) {
     return this.request(`/university/faculties/${facultyId}/`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(facultyData),
     });
   }
@@ -251,9 +338,6 @@ class API {
   async createDepartment(departmentData) {
     return this.request("/university/departments/", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(departmentData),
     });
   }
@@ -267,9 +351,6 @@ class API {
   async updateDepartment(departmentId, departmentData) {
     return this.request(`/university/departments/${departmentId}/`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(departmentData),
     });
   }
@@ -294,9 +375,6 @@ class API {
   async createDirection(directionData) {
     return this.request("/university/directions/", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(directionData),
     });
   }
@@ -310,9 +388,6 @@ class API {
   async updateDirection(directionId, directionData) {
     return this.request(`/university/directions/${directionId}/`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(directionData),
     });
   }
@@ -337,9 +412,6 @@ class API {
   async createGroup(groupData) {
     return this.request("/university/groups/", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(groupData),
     });
   }
@@ -353,9 +425,6 @@ class API {
   async updateGroup(groupId, groupData) {
     return this.request(`/university/groups/${groupId}/`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(groupData),
     });
   }
@@ -385,9 +454,6 @@ class API {
   async createPracticeDay(practiceData) {
     return this.request("/practice/practice_days/", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(practiceData),
     });
   }
@@ -396,9 +462,6 @@ class API {
   async updatePracticeDay(practiceDayId, practiceData) {
     return this.request(`/practice/practice_days/${practiceDayId}/`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(practiceData),
     });
   }
@@ -407,9 +470,6 @@ class API {
   async partialUpdatePracticeDay(practiceDayId, practiceData) {
     return this.request(`/practice/practice_days/${practiceDayId}/`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(practiceData),
     });
   }
@@ -422,7 +482,7 @@ class API {
   }
 
   // =============================================
-  // REPORTS API
+  // REPORTS API - FormData bilan ishlash uchun optimallashtirilgan
   // =============================================
 
   // LIST MY REPORTS (student + admin only)
@@ -438,40 +498,46 @@ class API {
   // CREATE REPORT (ONLY STUDENT) - FormData bilan
   async createReport(formData) {
     const url = `${API_BASE_URL}/practice/reports/`;
+    console.log("Creating report at:", url);
 
     const config = {
       method: "POST",
+      mode: "cors",
       headers: {
         Authorization: this.token ? `Bearer ${this.token}` : "",
+        // FormData bilan ishlaganda Content-Type ni bermang, browser o'zi belgilaydi
       },
       body: formData,
     };
 
     try {
       const response = await fetch(url, config);
+      console.log("Create report response:", response.status);
 
       if (!response.ok) {
-        throw new Error(`HTTP xatolik! Status: ${response.status}`);
+        const errorText = await response.text();
+        console.error("Create report failed:", errorText);
+        throw new Error(
+          `Report creation failed: ${response.status} ${errorText}`
+        );
       }
 
       return await response.json();
     } catch (error) {
+      console.error("Create report error:", error);
       throw error;
     }
   }
 
-  // UPDATE REPORT (DISALLOWED)
+  // UPDATE REPORT
   async updateReport(reportId, reportData) {
     return this.request(`/practice/reports/${reportId}/`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(reportData),
     });
   }
 
-  // DELETE REPORT (DISALLOWED)
+  // DELETE REPORT
   async deleteReport(reportId) {
     return this.request(`/practice/reports/${reportId}/`, {
       method: "DELETE",

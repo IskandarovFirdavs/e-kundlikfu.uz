@@ -171,6 +171,7 @@ const CellContent = styled.div`
 
   @media (max-width: 480px) {
     gap: 2px;
+    margin-left: 10px;
     width: 100%;
   }
 `;
@@ -353,10 +354,6 @@ export default function Students({ isDark = false, onThemeChange }) {
             >
               <TableCell>
                 <TableCellInside>
-                  <TableCellAvatar>
-                    {student.first_name?.[0]}
-                    {student.last_name?.[0]}
-                  </TableCellAvatar>
                   <CellContent>
                     <CellIconWrapper>
                       <PiStudentBold />

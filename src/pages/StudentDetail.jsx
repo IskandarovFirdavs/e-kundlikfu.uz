@@ -148,7 +148,7 @@ const TableRow = styled(Link)`
   }
 
   @media (max-width: 1024px) {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
     gap: 12px;
   }
 
@@ -182,24 +182,6 @@ const TableCell = styled.div`
   @media (max-width: 480px) {
     gap: 8px;
     font-size: 13px;
-  }
-`;
-
-const MobileTableCell = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 15px;
-  color: ${(props) => props.theme.text};
-  padding: 8px 0;
-  @media (max-width: 768px) {
-    gap: 10px;
-    font-size: 14px;
-  }
-
-  @media (max-width: 480px) {
-    gap: 8px;
-    font-size: 14px;
   }
 `;
 
@@ -245,8 +227,7 @@ const CellContent = styled.div`
   gap: 4px;
 
   @media (max-width: 480px) {
-    gap: 2px;
-    width: 100%;
+    font-size: 10px;
   }
 `;
 
@@ -296,28 +277,6 @@ const CellValue = styled.span`
     word-break: break-word;
   }
 `;
-const TableCellInside = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  @media (max-width: 480px) {
-    width: 100%;
-    justify-content: space-between;
-  }
-`;
-const TableCellAvatar = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #3b82f6;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: bold;
-`;
 
 const ScoreBadge = styled.div`
   background-color: ${(props) => props.badgeColor};
@@ -337,12 +296,8 @@ const ScoreBadge = styled.div`
   }
 
   @media (max-width: 480px) {
-    padding: 8px 12px;
-    font-size: 14px;
-    min-width: 60px;
-    justify-self: start;
-    margin-top: 4px;
-    display: none;
+    width: 40%;
+    font-size: 12px;
   }
 `;
 
@@ -526,15 +481,13 @@ export default function StudentDetail({ isDark = false }) {
                 >
                   {getStatusColors(prc.status).icon}
                 </CellIcon>
-                <MobileTableCell>
-                  <CellContent>
-                    <CellIconWrapper>
-                      <FaLocationDot />
-                      <CellLabel>Location</CellLabel>
-                    </CellIconWrapper>
-                    <CellValue>{prc.address}</CellValue>
-                  </CellContent>
-                </MobileTableCell>
+                <CellContent>
+                  <CellIconWrapper>
+                    <FaLocationDot />
+                    <CellLabel>Location</CellLabel>
+                  </CellIconWrapper>
+                  <CellValue>{prc.address}</CellValue>
+                </CellContent>
                 <ScoreBadge
                   style={{ display: "flex", justifyContent: "center" }}
                   badgeColor={getStatusColors(prc.status).badge}

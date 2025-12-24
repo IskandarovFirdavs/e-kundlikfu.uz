@@ -6,7 +6,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import PrivateRoute from "./context/PrivateRoute.jsx";
 import Navbar from "./layout/Navbar.jsx";
 import AppWrapper from "./styles/WeatherBackground.jsx";
-
+import NotFoundPage from "./pages/NotFoundPage.jsx";
 // Pages
 import Faculties from "./pages/Faculties.jsx";
 import Directions from "./pages/Directions.jsx";
@@ -275,7 +275,7 @@ function AppContent() {
           />
 
           {/* 404 route - Not found */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </AppWrapper>
     </ThemeProvider>

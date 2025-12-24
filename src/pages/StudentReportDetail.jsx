@@ -212,41 +212,6 @@ const MapWrapper = styled.div`
   }
 `;
 
-const StatusBadge = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  z-index: 1;
-  width: 50%;
-  &.pending {
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fbbf24;
-  }
-
-  &.approved {
-    background: #d1fae5;
-    color: #065f46;
-    border: 1px solid #10b981;
-  }
-
-  &.rejected {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #ef4444;
-  }
-
-  &.submitted {
-    background: #dbeafe;
-    color: #1e40af;
-    border: 1px solid #3b82f6;
-  }
-`;
-
 const LoadingContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -350,77 +315,19 @@ function getStatusDisplay(status) {
   }
 }
 
-// Get status badge class
-function getStatusBadgeClass(status) {
-  if (!status) return "pending";
-
-  const statusStr = String(status).toLowerCase();
-
-  if (
-    statusStr === "approved" ||
-    statusStr === "completed" ||
-    statusStr === "success"
-  ) {
-    return "approved";
-  } else if (statusStr === "rejected" || statusStr === "cancelled") {
-    return "rejected";
-  } else if (statusStr === "pending" || statusStr === "submitted") {
-    return "pending";
-  } else {
-    return "submitted";
-  }
-}
-
-// Get status icon
-function getStatusIcon(status) {
-  const statusStr = String(status).toLowerCase();
-
-  switch (statusStr) {
-    case "approved":
-    case "completed":
-    case "success":
-      return <FaCheckCircle />;
-    case "rejected":
-    case "cancelled":
-      return <FaTimesCircle />;
-    case "pending":
-    case "submitted":
-      return <FaHourglassHalf />;
-    default:
-      return <FaHourglassHalf />;
-  }
-}
-
-// Format date
 function formatDate(dateString) {
   if (!dateString) return "N/A";
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("uz-UZ", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch (e) {
-    return dateString;
-  }
-}
 
-// Format time
-function formatTime(timeString) {
-  if (!timeString) return "N/A";
-  try {
-    // Agar faqat vaqt bo'lsa
-    if (timeString.includes(":")) {
-      const [hours, minutes] = timeString.split(":");
-      return `${hours}:${minutes}`;
-    }
-    return timeString;
-  } catch (e) {
-    return timeString;
-  }
+  const date = new Date(dateString);
+  if (isNaN(date)) return dateString;
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${day}.${month}.${year} ${hours}:${minutes}`;
 }
 
 export default function StudentReportDetail() {
@@ -513,17 +420,9 @@ export default function StudentReportDetail() {
           <Section>
             <InfoGrid>
               <InfoItem>
-                <InfoLabel>Hisobot ID</InfoLabel>
-                <InfoValue>{reportsData.id || "N/A"}</InfoValue>
-              </InfoItem>
-              <InfoItem>
                 <InfoLabel>Yaratilgan sana</InfoLabel>
                 <InfoValue>{formatDate(reportsData.created_at)}</InfoValue>
               </InfoItem>{" "}
-              <StatusBadge className={getStatusBadgeClass(practiceDay.status)}>
-                {getStatusIcon(practiceDay.status)}
-                {getStatusDisplay(practiceDay.status)}
-              </StatusBadge>
             </InfoGrid>
 
             {reportsData.text && (
