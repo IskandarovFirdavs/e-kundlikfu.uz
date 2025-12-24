@@ -148,7 +148,7 @@ const TableRow = styled(Link)`
   }
 
   @media (max-width: 1024px) {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     gap: 12px;
   }
 
@@ -330,6 +330,9 @@ const ScoreBadge = styled.div`
   min-width: 60px;
   border: 1px solid ${(props) => props.textColor}20;
 
+  @media (max-width: 860px) {
+    display: none;
+  }
   @media (max-width: 768px) {
     padding: 6px 10px;
     font-size: 13px;
@@ -342,7 +345,29 @@ const ScoreBadge = styled.div`
     min-width: 60px;
     justify-self: start;
     margin-top: 4px;
-    display: none;
+  }
+`;
+
+const ScoreBadge2 = styled.div`
+  background-color: ${(props) => props.badgeColor};
+  color: ${(props) => props.textColor};
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+  min-width: 60px;
+  border: 1px solid ${(props) => props.textColor}20;
+
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    font-size: 13px;
+    min-width: 50px;
+  }
+
+  @media (max-width: 480px) {
+    width: 40%;
+    font-size: 12px;
   }
 `;
 
@@ -714,13 +739,12 @@ export default function StudentDashboard({ isDark = false }) {
                     </CellValue>
                   </CellContent>
                 </MobileTableCell>
-                <ScoreBadge
-                  style={{ display: "flex", justifyContent: "center" }}
+                <ScoreBadge2
                   badgeColor={getStatusColors(prc.status).badge}
                   textColor={getStatusColors(prc.status).text}
                 >
                   {prc.date}
-                </ScoreBadge>
+                </ScoreBadge2>
               </MobileTable>
               <ScoreBadge
                 badgeColor={getStatusColors(prc.status).badge}

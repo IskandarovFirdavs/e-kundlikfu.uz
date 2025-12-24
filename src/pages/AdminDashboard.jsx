@@ -128,9 +128,8 @@ const SidebarHeader = styled.div`
 const AppTitle = styled.h1`
   font-size: 1.75rem;
   font-weight: 700;
-
-  -webkit-background-clip: text;
   margin: 0;
+
   display: flex;
   align-items: center;
   gap: 12px;

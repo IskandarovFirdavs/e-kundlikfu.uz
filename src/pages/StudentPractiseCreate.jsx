@@ -265,6 +265,13 @@ const StatusBadge = styled.span`
   }
 `;
 
+const Center = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;
+
 const getStatusDisplay = (status) => {
   switch (status) {
     case "pending":
@@ -404,9 +411,7 @@ export default function Create({ onSubmissionSuccess }) {
           if (!inside) {
             setErrors((prev) => ({
               ...prev,
-              radius: `Siz amaliyot joyidan ${dist.toFixed(
-                0
-              )} metr uzoqdasiz (500m ichida bo'lish kerak)`,
+              radius: `Siz amaliyot joyidan uzoqdasiz (500m ichida bo'lish kerak)`,
             }));
           } else {
             setErrors((prev) => ({ ...prev, radius: null }));
@@ -588,12 +593,12 @@ export default function Create({ onSubmissionSuccess }) {
               <h2>Suratingizni yuklang *</h2>
               <ImageUploadBox htmlFor="image-upload" hasError={errors.image}>
                 {!image ? (
-                  <div>
+                  <Center>
                     <div>+</div>
                     <div className="placeholder">
                       Surat yuklash uchun bosing
                     </div>
-                  </div>
+                  </Center>
                 ) : (
                   <PreviewImg src={image} alt="Oldindan ko'rish" />
                 )}
