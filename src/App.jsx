@@ -275,7 +275,6 @@ function AppContent() {
           />
 
           {/* 404 route - Not found */}
-          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </AppWrapper>
     </ThemeProvider>
