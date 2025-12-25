@@ -274,7 +274,7 @@ function AppContent() {
             }
           />
 
-          {/* 404 route - Not found */}
+          {/* ⭐️ 404 route - Not found (EN OXIRIDA) ⭐️ */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </AppWrapper>
