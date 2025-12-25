@@ -318,7 +318,7 @@ export default function Students({ isDark = false, onThemeChange }) {
       <PracticeDaysSection>
         <HeaderRow>
           <SectionTitle>
-            {groupId ? `${group.group_number}` : groupNumber}-guruh talabalari
+            {groupId ? `${group.group_number}` : groupNumber} guruh talabalari
           </SectionTitle>
 
           <div
