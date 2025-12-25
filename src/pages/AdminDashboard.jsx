@@ -2693,7 +2693,7 @@ ${
             ]
           : []),
         // Password field only for creation, not for editing existing users
-        !editingItem && {
+        {
           name: "password",
           label: "Password",
           type: "password",
