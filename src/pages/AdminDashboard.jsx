@@ -2822,11 +2822,11 @@ ${
     const statusStr = String(status).toLowerCase();
     let statusClass = "inactive";
 
-    if (statusStr === "approved" || statusStr === "completed") {
+    if (statusStr === "success") {
       statusClass = "approved";
-    } else if (statusStr === "rejected" || statusStr === "cancelled") {
+    } else if (statusStr === "rejected") {
       statusClass = "rejected";
-    } else if (statusStr === "pending" || statusStr === "submitted") {
+    } else if (statusStr === "pending") {
       statusClass = "submitted";
     } else if (statusStr === "active") {
       statusClass = "active";
