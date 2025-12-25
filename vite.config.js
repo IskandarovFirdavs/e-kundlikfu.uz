@@ -1,9 +1,10 @@
-// vite.config.js
+// vite.config.js - local development uchun
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  base: "/",
   server: {
     port: 3000,
     proxy: {
@@ -28,5 +29,10 @@ export default defineConfig({
         secure: false,
       },
     },
+  },
+  // Build sozlamalari
+  build: {
+    outDir: "dist",
+    sourcemap: false,
   },
 });

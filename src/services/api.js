@@ -1,50 +1,40 @@
-// API.js - GitHub Pages va local development uchun optimallashtirilgan
-const isLocalDevelopment =
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1";
-
-// Base URL ni aniqlash
-const API_BASE_URL = isLocalDevelopment
-  ? "" // Localda Vite proxy ishlatadi
-  : "https://api.e-kundalikfu.uz"; // Productionda to'g'ridan backendga
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (window.location.hostname.includes("localhost") ||
+  window.location.hostname.includes("127.0.0.1")
+    ? "" // Localda Vite proxy ishlatadi
+    : "https://api.e-kundalikfu.uz"); // Productionda
 
 class API {
   constructor() {
     this.token = localStorage.getItem("authToken") || "";
     console.log("API initialized with base URL:", API_BASE_URL);
-    console.log("Is local development?", isLocalDevelopment);
+    console.log("Environment API URL:", import.meta.env.VITE_API_BASE_URL);
   }
 
-  // Rasm URL ni olish - GitHub Pages uchun optimallashtirilgan
+  // Rasm URL ni olish
   getImageUrl(path) {
     if (!path) return "";
 
-    // Agar backend to'liq URL qaytargan bo'lsa
     if (path.startsWith("http")) {
       return path;
     }
 
-    // GitHub Pages uchun to'liq URL qaytarish
-    if (!isLocalDevelopment) {
-      // Productionda to'g'ridan backend URL bilan
-      return `https://api.e-kundalikfu.uz${
-        path.startsWith("/") ? path : `/${path}`
-      }`;
-    }
-
-    // Localda proxy orqali
-    return path.startsWith("/") ? path : `/${path}`;
+    // Productionda to'g'ridan backend URL bilan
+    return `https://api.e-kundalikfu.uz${
+      path.startsWith("/") ? path : `/${path}`
+    }`;
   }
 
-  // Umumiy so'rov metod - CORS va error handling bilan
+  // Umumiy so'rov metod
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
 
-    console.log(`API Request: ${options.method || "GET"} ${url}`);
+    console.log(`🌐 API Request: ${options.method || "GET"} ${url}`);
 
     const config = {
-      mode: "cors", // CORS mode ni faollashtirish
-      credentials: isLocalDevelopment ? "same-origin" : "include", // Cookie lar uchun
+      mode: "cors",
+      credentials: "omit", // ⚠️ IMPORTANT: Vercel uchun 'omit' ishlatish kerak
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
@@ -55,74 +45,38 @@ class API {
     // Token qo'shish
     if (this.token) {
       config.headers["Authorization"] = `Bearer ${this.token}`;
+      console.log("✅ Token added to request");
     }
 
     try {
       const response = await fetch(url, config);
 
-      console.log(`API Response: ${response.status} ${response.statusText}`);
+      console.log(`📨 API Response: ${response.status} ${response.statusText}`);
 
-      // 401 xatosi bo'lsa (token eskirgan)
+      // 401 xatosi bo'lsa
       if (response.status === 401) {
         console.warn("Token expired or invalid, clearing token");
         this.clearToken();
         throw new Error("Authentication failed. Please login again.");
       }
 
-      // 403 xatosi bo'lsa (ruxsat yo'q)
-      if (response.status === 403) {
-        throw new Error("You don't have permission to access this resource.");
-      }
-
       if (!response.ok) {
-        let errorMessage = `HTTP error! Status: ${response.status}`;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.detail || errorData.message || errorMessage;
-        } catch (e) {
-          // JSON parse qilish mumkin bo'lmasa, text olish
-          const errorText = await response.text();
-          if (errorText) errorMessage = errorText;
-        }
-        throw new Error(errorMessage);
+        const errorText = await response.text();
+        console.error("❌ API Error:", response.status, errorText);
+        throw new Error(`HTTP error ${response.status}: ${errorText}`);
       }
 
       // JSON response ni olish
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        const data = await response.json();
-        console.log("API Response data:", data);
-        return data;
-      } else {
-        console.log("API Response: non-JSON response");
-        return { success: true };
-      }
+      return await response.json();
     } catch (error) {
-      console.error("API Request Error:", error);
+      console.error("🔥 API Request Error:", error.message);
 
       // CORS xatosini aniqlash
-      if (
-        error.name === "TypeError" &&
-        error.message.includes("Failed to fetch")
-      ) {
-        const corsError = new Error(
-          `CORS error: Cannot connect to server at ${API_BASE_URL}. ` +
-            `Please check: 1) Backend server is running, 2) CORS is enabled, ` +
-            `3) Your network connection`
+      if (error.message.includes("Failed to fetch")) {
+        throw new Error(
+          `CORS/Network error: Cannot connect to ${API_BASE_URL}. ` +
+            `Check: 1) Backend CORS settings, 2) Backend is running, 3) Network`
         );
-        console.error(corsError.message);
-        throw corsError;
-      }
-
-      // Network xatosini aniqlash
-      if (
-        error.name === "TypeError" &&
-        error.message.includes("NetworkError")
-      ) {
-        const networkError = new Error(
-          "Network error: Please check your internet connection"
-        );
-        throw networkError;
       }
 
       throw error;
@@ -133,96 +87,56 @@ class API {
   setToken(token) {
     this.token = token;
     localStorage.setItem("authToken", token);
-    console.log("Token saved to localStorage");
+    console.log("🔑 Token saved to localStorage");
   }
 
   // Token ni o'chirish
   clearToken() {
     this.token = "";
     localStorage.removeItem("authToken");
-    console.log("Token cleared from localStorage");
+    console.log("🗑️ Token cleared");
 
-    // GitHub Pages uchun to'g'ri redirect
-    const currentPath = window.location.pathname;
-    const isGitHubPages = window.location.hostname.includes("github.io");
-
-    if (
-      currentPath !== "/" &&
-      currentPath !== "/e-maktab/" &&
-      currentPath !== "/e-maktab"
-    ) {
-      if (isGitHubPages) {
-        window.location.href = "/e-maktab/"; // GitHub Pages uchun
-      } else {
-        window.location.href = "/"; // Local uchun
-      }
-    }
+    // Vercel uchun redirect
+    window.location.href = "/";
   }
 
-  // Token mavjudligini tekshirish
-  hasToken() {
-    const hasToken = !!this.token;
-    console.log("Token exists?", hasToken);
-    return hasToken;
-  }
-
-  // Token ni tekshirish (valid yoki yo'q)
-  async validateToken() {
-    if (!this.token) {
-      return false;
-    }
-
-    try {
-      await this.getCurrentUser();
-      return true;
-    } catch (error) {
-      console.warn("Token validation failed:", error);
-      return false;
-    }
-  }
-
-  // =============================================
-  // USERS API - Optimallashtirilgan
-  // =============================================
-
-  // LOGIN - CORS uchun optimallashtirilgan
+  // LOGIN - Soddalashtirilgan versiya
   async login(username, password) {
     const url = `${API_BASE_URL}/users/login/`;
-    console.log("Login attempt to:", url);
+    console.log("🔐 Login attempt to:", url);
 
     try {
       const response = await fetch(url, {
         method: "POST",
         mode: "cors",
+        credentials: "omit", // ⚠️ IMPORTANT
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
       });
 
-      console.log("Login response status:", response.status);
+      console.log("📡 Login response status:", response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Login failed:", errorText);
+        console.error("❌ Login failed:", response.status, errorText);
         throw new Error(`Login failed: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
-      console.log("Login successful, response:", data);
+      console.log("✅ Login successful:", data);
 
       // Token ni saqlash
-      if (data.access_token) {
-        this.setToken(data.access_token);
-        console.log("Access token saved");
-      } else if (data.token) {
-        this.setToken(data.token);
-        console.log("Token saved");
+      if (data.access_token || data.token) {
+        const token = data.access_token || data.token;
+        this.setToken(token);
+        console.log("🔑 Token saved");
       }
 
       return data;
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("🔥 Login error:", error);
       throw error;
     }
   }
