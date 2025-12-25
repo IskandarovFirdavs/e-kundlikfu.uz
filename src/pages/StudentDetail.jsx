@@ -484,9 +484,9 @@ export default function StudentDetail({ isDark = false }) {
                 <CellContent>
                   <CellIconWrapper>
                     <FaLocationDot />
-                    <CellLabel>Location</CellLabel>
+                    <CellLabel>Tashkilot</CellLabel>
                   </CellIconWrapper>
-                  <CellValue>{prc.address}</CellValue>
+                  <CellValue>{prc.org_name || "Not specified"}</CellValue>
                 </CellContent>
                 <ScoreBadge
                   style={{ display: "flex", justifyContent: "center" }}

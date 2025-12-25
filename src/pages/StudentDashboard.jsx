@@ -296,28 +296,6 @@ const CellValue = styled.span`
     word-break: break-word;
   }
 `;
-const TableCellInside = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  @media (max-width: 480px) {
-    width: 100%;
-    justify-content: space-between;
-  }
-`;
-const TableCellAvatar = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #3b82f6;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: bold;
-`;
 
 const ScoreBadge = styled.div`
   background-color: ${(props) => props.badgeColor};
@@ -732,11 +710,9 @@ export default function StudentDashboard({ isDark = false }) {
                   <CellContent>
                     <CellIconWrapper>
                       <FaLocationDot />
-                      <CellLabel>Lokatsiya</CellLabel>
+                      <CellLabel>Tashkilot</CellLabel>
                     </CellIconWrapper>
-                    <CellValue>
-                      {prc.address || prc.location || "Not specified"}
-                    </CellValue>
+                    <CellValue>{prc.org_name || "Not specified"}</CellValue>
                   </CellContent>
                 </MobileTableCell>
                 <ScoreBadge2
