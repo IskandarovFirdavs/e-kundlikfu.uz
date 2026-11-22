@@ -87,38 +87,62 @@ class API {
     window.location.href = "/";
   }
 
-  // LOGIN - Soddalashtirilgan versiya
+  // LOGIN - muvaffaqiyatsiz urinishda profil yuklanmaydi
   async login(username, password) {
     const url = `${API_BASE_URL}/users/login/`;
 
+    // Eski token yangi login urinishiga aralashmasin.
+    this.token = "";
+    localStorage.removeItem("authToken");
+
+    let response;
     try {
-      const response = await fetch(url, {
+      response = await fetch(url, {
         method: "POST",
         mode: "cors",
-        credentials: "omit", // ⚠️ IMPORTANT
-        headers: {
-          "Content-Type": "application/json",
-        },
+        credentials: "omit",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Login failed: ${response.status} ${errorText}`);
-      }
-
-      const data = await response.json();
-
-      // Token ni saqlash
-      if (data.access_token || data.token) {
-        const token = data.access_token || data.token;
-        this.setToken(token);
-      }
-
-      return data;
     } catch (error) {
+      if (error.message?.includes("Failed to fetch")) {
+        throw new Error("Server bilan aloqa yo‘q. Internet yoki serverni tekshiring.");
+      }
       throw error;
     }
+
+    const responseText = await response.text();
+    let data = {};
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch {
+      data = {};
+    }
+
+    if (!response.ok) {
+      const message =
+        data.detail ||
+        data.message ||
+        data.error ||
+        data.non_field_errors?.[0] ||
+        data.username?.[0] ||
+        data.password?.[0];
+
+      if (response.status === 400 || response.status === 401) {
+        throw new Error(message || "Username yoki parol noto‘g‘ri.");
+      }
+      throw new Error(message || `Server xatosi (${response.status}).`);
+    }
+
+    const token = data.access_token || data.token;
+    if (!token) {
+      throw new Error(
+        data.detail || data.message || "Server token qaytarmadi. Login amalga oshmadi."
+      );
+    }
+
+    this.setToken(token);
+    return data;
   }
 
   // CURRENT USER PROFILE

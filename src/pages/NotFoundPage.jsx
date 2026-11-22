@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import { FaHome, FaArrowLeft, FaSearch } from "react-icons/fa";
 import { lightTheme, darkTheme } from "../styles/theme.js";
@@ -50,6 +51,7 @@ const ErrorMessage = styled.p`
 
 export default function NotFoundPage({ isDark = false }) {
   const theme = isDark ? darkTheme : lightTheme;
+  const { t } = useLanguage();
 
   const goBack = () => {
     if (window.history.length > 1) {
@@ -63,11 +65,10 @@ export default function NotFoundPage({ isDark = false }) {
     <MinimalContainer theme={theme}>
       <ErrorCode theme={theme}>404</ErrorCode>
 
-      <ErrorTitle theme={theme}>Sahifa topilmadi</ErrorTitle>
+      <ErrorTitle theme={theme}>{t("catalog.notFoundTitle")}</ErrorTitle>
 
       <ErrorMessage theme={theme}>
-        Uzr, siz izlayotgan sahifa mavjud emas. Manzil noto'g'ri yoki sahifa
-        o'chirilgan bo'lishi mumkin.
+        {t("catalog.notFoundMessage")}
       </ErrorMessage>
     </MinimalContainer>
   );

@@ -10,6 +10,7 @@ import runaway from "../assets/runaway1.gif";
 import runaway2 from "../assets/runaway2.gif";
 import { IoReloadOutline } from "react-icons/io5";
 import { FaRegUserCircle } from "react-icons/fa";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const fadeIn = keyframes`
   0% {
@@ -29,6 +30,8 @@ const Nav = styled.nav`
   padding: 0 40px;
   height: 87px;
   background: #007bff;
+  position: relative; /* Navbarni relative qildik */
+  z-index: 1000; /* Boshqa elementlardan tepada turishi uchun */
 
   @media (max-width: 768px) {
     padding: 0 12px;
@@ -105,6 +108,7 @@ const Right = styled.div`
   display: flex;
   align-items: center;
   gap: 18px;
+  position: relative; /* Menyu shu divga nisbatan joylashadi */
 `;
 
 const Avatar = styled.div`
@@ -152,15 +156,25 @@ const Langs = styled.div`
   display: flex;
   gap: 6px;
 
-  span {
-    padding: 4px 6px;
+  button {
+    padding: 5px 7px;
+    border: 0;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: ${(p) => (p.dark ? "#f9fafb" : "#1f2937")};
     background: ${(p) => (p.dark ? "#374151" : "#e5e7eb")};
+    opacity: 0.68;
+    outline: none;
+
+    &[aria-pressed="true"] {
+      opacity: 1;
+      outline: 2px solid #3b82f6;
+    }
 
     &:hover {
-      opacity: 0.7;
+      opacity: 1;
     }
   }
 `;
@@ -180,11 +194,12 @@ const MenuBackdrop = styled.div`
 `;
 
 const Menu = styled.div`
-  position: fixed;
-  top: 90px;
-  right: 40px;
+  position: absolute; /* Fixed o'rniga Absolute qildik */
+  top: 100%; /* Avatarning tagidan boshlanadi */
+  right: 0; /* O'ng chetiga tekislanadi */
+  margin-top: 15px; /* Avatar bilan orasida ozgina masofa */
   background: ${(p) =>
-    p.dark ? "rgba(31,41,55,0.8)" : "rgba(255,255,255,0.8)"};
+    p.dark ? "rgba(31,41,55,0.95)" : "rgba(255,255,255,0.95)"};
   color: ${(p) => (p.dark ? "#f9fafb" : "#111")};
   backdrop-filter: blur(15px);
   border-radius: 16px;
@@ -194,10 +209,7 @@ const Menu = styled.div`
   z-index: 9999;
   animation: ${fadeIn} 0.2s ease;
 
-  @media (max-width: 768px) {
-    right: 10px;
-    top: 80px;
-  }
+  /* Kichik ekranlar uchun ham absolute ishlaydi, faqat o'ngdan masofa kerak emas */
 `;
 
 const MenuItem = styled.div`
@@ -270,7 +282,7 @@ const Imgs = styled.div`
 
 function Navbar({ dark, setDark }) {
   const [open, setOpen] = useState(false);
-  const [lang, setLang] = useState("uz");
+  const { language, setLanguage, t } = useLanguage();
   const [history, setHistory] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [user, setUser] = useState(null);
@@ -279,21 +291,17 @@ function Navbar({ dark, setDark }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Fetch current user on component mount
   useEffect(() => {
     fetchCurrentUser();
   }, []);
 
-  // Function to fetch current user data
   const fetchCurrentUser = async () => {
     try {
       setLoading(true);
       const userData = await api.getCurrentUser();
       setUser(userData);
-      // Save user to localStorage for consistency
       localStorage.setItem("user", JSON.stringify(userData));
     } catch (error) {
-      // If API fails, use localStorage data if available
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         setUser(JSON.parse(storedUser));
@@ -303,18 +311,14 @@ function Navbar({ dark, setDark }) {
     }
   };
 
-  // Initialize history on component mount and track location changes
   useEffect(() => {
     if (history.length === 0) {
-      // First load
       setHistory([location.pathname]);
       setCurrentIndex(0);
     } else {
-      // Check if this is a new location (not going back/forward)
       const isNewLocation = location.pathname !== history[currentIndex];
 
       if (isNewLocation) {
-        // Remove any forward history if we're not at the end
         const newHistory = history.slice(0, currentIndex + 1);
         newHistory.push(location.pathname);
         setHistory(newHistory);
@@ -336,7 +340,7 @@ function Navbar({ dark, setDark }) {
   };
 
   const getDisplayName = () => {
-    if (!user) return "Foydalanuvchi";
+    if (!user) return t("user");
 
     if (user.first_name && user.last_name) {
       return `${user.first_name} ${user.last_name}`;
@@ -346,28 +350,15 @@ function Navbar({ dark, setDark }) {
       return user.username;
     }
 
-    return "Foydalanuvchi";
+    return t("user");
   };
 
   const getRoleDisplay = () => {
     if (!user || !user.role) return "";
 
-    // Role'larni o'zbek tilida ko'rsatish
-    const roleMap = {
-      super_user: "Super Admin",
-      admin: "Administrator",
-      rector: "Rektor",
-      dean: "Dekan",
-      deputy_dean: "Dekan o'rinbosari",
-      head_of_department: "Kafedra mudiri",
-      teacher: "O'qituvchi",
-      student: "Talaba",
-    };
-
-    return roleMap[user.role] || user.role;
+    return t(`role.${user.role}`) || user.role;
   };
 
-  // Navigation functions using React Router's navigate
   const goBack = () => {
     if (currentIndex > 0) {
       const newIndex = currentIndex - 1;
@@ -384,15 +375,12 @@ function Navbar({ dark, setDark }) {
     }
   };
 
-  // Keyboard shortcuts for navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Alt + Left Arrow for back
       if (e.altKey && e.key === "ArrowLeft") {
         e.preventDefault();
         goBack();
       }
-      // Alt + Right Arrow for forward
       if (e.altKey && e.key === "ArrowRight") {
         e.preventDefault();
         goForward();
@@ -403,33 +391,30 @@ function Navbar({ dark, setDark }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentIndex, history]);
 
-  // tashqi click — menu yopilsin
   useEffect(() => {
     const close = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+      // Agar menyu ochiq bo'lsa va tashqariga bosilsa yopamiz
+      if (open && menuRef.current && !menuRef.current.contains(e.target)) {
         setOpen(false);
       }
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
-  }, []);
+  }, [open]); // open holatiga qarab yangilanadi
 
-  // Handle logout
   const handleLogout = async () => {
+    setOpen(false); // Avval menyuni yopamiz
     try {
       await api.logout();
     } catch (error) {
     } finally {
-      // Clear user data
       setUser(null);
       localStorage.removeItem("user");
       localStorage.removeItem("authToken");
-      // Redirect to login page
       navigate("/");
     }
   };
 
-  // Function to get dashboard link based on role
   const getDashboardLink = () => {
     if (!user) return "/";
 
@@ -453,12 +438,11 @@ function Navbar({ dark, setDark }) {
     }
   };
 
-  // Function to navigate to dashboard
   const goToDashboard = () => {
+    setOpen(false); // Sahifaga o'tishdan oldin menyuni yopamiz
     navigate(getDashboardLink());
   };
 
-  // Show user info in navbar (desktop only)
   const renderUserInfo = () => {
     if (!user || loading) return null;
 
@@ -488,6 +472,8 @@ function Navbar({ dark, setDark }) {
       </Left>
 
       <Right>
+        {renderUserInfo()}{" "}
+        {/* Buni ham chaqirdik, shunda o'ng tomonda ism chiqadi */}
         <NavButtons>
           <NavButton
             dark={dark ? true : undefined}
@@ -507,18 +493,14 @@ function Navbar({ dark, setDark }) {
             <IoChevronForward />
           </NavButton>
         </NavButtons>
-
-        {/* Avatar */}
         <Avatar onClick={() => setOpen(!open)}>
           {loading ? <IoReloadOutline /> : getInitials() || <FaRegUserCircle />}
         </Avatar>
-
         {open && (
           <>
             <MenuBackdrop onClick={() => setOpen(false)} />
 
             <Menu dark={dark} ref={menuRef}>
-              {/* Show user info in menu for all devices */}
               {!loading && user && (
                 <MenuItem
                   dark={dark}
@@ -539,19 +521,39 @@ function Navbar({ dark, setDark }) {
               )}
 
               <MenuItem dark={dark}>
-                Til
+                {t("language")}
                 <Langs dark={dark}>
-                  <span onClick={() => setLang("uz")}>UZ</span>
-                  <span onClick={() => setLang("ru")}>RU</span>
-                  <span onClick={() => setLang("en")}>EN</span>
+                  {[
+                    ["uz", "UZ"],
+                    ["ru", "RU"],
+                    ["en", "EN"],
+                  ].map(([code, label]) => (
+                    <button
+                      key={code}
+                      type="button"
+                      aria-pressed={language === code}
+                      onClick={() => {
+                        setLanguage(code);
+                        setOpen(false); // Til tanlanganda yopiladi
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </Langs>
               </MenuItem>
 
               <SwitchWrapper dark={dark}>
-                <span>Rejim </span>
+                <span>{t("theme")} </span>
                 <Switcher>
                   <MdLightMode size={20} style={{ opacity: dark ? 0.4 : 1 }} />
-                  <IOSSwitch dark={dark} onClick={() => setDark(!dark)}>
+                  <IOSSwitch
+                    dark={dark}
+                    onClick={() => {
+                      setDark(!dark);
+                      setOpen(false); // Tema o'zgarganda yopiladi
+                    }}
+                  >
                     <Thumb dark={dark} />
                   </IOSSwitch>
                   <MdDarkMode size={20} style={{ opacity: dark ? 1 : 0.4 }} />
@@ -559,7 +561,7 @@ function Navbar({ dark, setDark }) {
               </SwitchWrapper>
 
               <ExitItem dark={dark} onClick={handleLogout}>
-                Chiqish
+                {t("logout")}
                 <Imgs>
                   {dark ? (
                     <>

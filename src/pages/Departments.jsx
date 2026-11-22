@@ -4,6 +4,7 @@ import { lightTheme, darkTheme } from "../styles/theme.js";
 import { FaBuilding } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
@@ -232,6 +233,7 @@ export default function Departments({ isDark = false, onThemeChange }) {
 
   const theme = isDark ? darkTheme : lightTheme;
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -274,9 +276,9 @@ export default function Departments({ isDark = false, onThemeChange }) {
   }, [facultyId]);
 
   // render
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
-  if (!data) return <div className="p-4">No data found.</div>;
+  if (loading) return <div className="p-4">{t("catalog.loading")}</div>;
+  if (error) return <div className="p-4 text-red-600">{t("catalog.error")} {error}</div>;
+  if (!data) return <div className="p-4">{t("catalog.noData")}</div>;
 
   const departments = facultyId ? data?.departments || [] : data || [];
   const facultyName =
@@ -288,7 +290,7 @@ export default function Departments({ isDark = false, onThemeChange }) {
       <DepartmentsSection>
         <HeaderRow>
           <SectionTitle>
-            {facultyId ? data.name : facultyName} — Kafedralar ro‘yxati
+            {facultyId ? data.name : facultyName} — {t("catalog.departmentsList")}
           </SectionTitle>{" "}
           <div
             style={{
@@ -298,12 +300,12 @@ export default function Departments({ isDark = false, onThemeChange }) {
               height: "100%",
             }}
           >
-            <Counter>{departments.length} ta</Counter>
+            <Counter>{departments.length} {t("catalog.count")}</Counter>
           </div>
         </HeaderRow>
         {departments.length === 0 && (
           <p style={{ padding: "20px", color: theme.text }}>
-            Hozircha kafedralar mavjud emas.
+            {t("catalog.noDepartments")}
           </p>
         )}
         {departments.map((dep) => (
@@ -317,7 +319,7 @@ export default function Departments({ isDark = false, onThemeChange }) {
               </CellIcon>
 
               <CellContent>
-                <CellLabel>Kafedra</CellLabel>
+                <CellLabel>{t("catalog.departments")}</CellLabel>
                 <CellValue>{dep.name}</CellValue>{" "}
                 <CellLabel>{dep.abbr}</CellLabel>
               </CellContent>

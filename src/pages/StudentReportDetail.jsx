@@ -19,6 +19,7 @@ import {
   FaHourglassHalf,
 } from "react-icons/fa";
 import api from "../services/api";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 // Leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
@@ -331,6 +332,7 @@ function formatDate(dateString) {
 }
 
 export default function StudentReportDetail() {
+  const { t } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
   const [practiceDay, setPracticeDay] = useState(null);
@@ -373,7 +375,7 @@ export default function StudentReportDetail() {
             size={40}
             style={{ animation: "spin 1s linear infinite" }}
           />
-          <div>Amaliyot kuni ma'lumotlari yuklanmoqda...</div>
+          <div>{t("reportDetail.loading")}</div>
         </LoadingContainer>
       </Container>
     );
@@ -385,8 +387,8 @@ export default function StudentReportDetail() {
         <Header></Header>
         <ErrorContainer>
           <FaExclamationCircle size={48} color="#dc2626" />
-          <ErrorTitle>Xatolik yuz berdi</ErrorTitle>
-          <p>{error || "Amaliyot kuni topilmadi"}</p>
+          <ErrorTitle>{t("reportDetail.error")}</ErrorTitle>
+          <p>{error || t("reportDetail.notFound")}</p>
           <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
             <button
               onClick={fetchPracticeDay}
@@ -400,7 +402,7 @@ export default function StudentReportDetail() {
                 fontWeight: "500",
               }}
             >
-              Qayta yuklash
+              {t("reportDetail.retry")}
             </button>
           </div>
         </ErrorContainer>
@@ -420,7 +422,7 @@ export default function StudentReportDetail() {
           <Section>
             <InfoGrid>
               <InfoItem>
-                <InfoLabel>Yaratilgan sana</InfoLabel>
+                <InfoLabel>{t("reportDetail.createdDate")}</InfoLabel>
                 <InfoValue>{formatDate(reportsData.created_at)}</InfoValue>
               </InfoItem>{" "}
             </InfoGrid>
@@ -435,7 +437,7 @@ export default function StudentReportDetail() {
                     fontWeight: "600",
                   }}
                 >
-                  Hisobot matni:
+                  {t("reportDetail.reportText")}
                 </InfoLabel>
                 <ReportContent>{reportsData.text}</ReportContent>
               </div>
@@ -447,7 +449,7 @@ export default function StudentReportDetail() {
               <MediaBox>
                 <MediaHeader>
                   <FaFileAlt />
-                  Hisobot rasmi
+                  {t("reportDetail.reportImage")}
                 </MediaHeader>
                 <MediaContent>
                   {reportsData.image ? (
@@ -461,7 +463,7 @@ export default function StudentReportDetail() {
                   ) : (
                     <EmptyState>
                       <FaFileAlt size={48} color="#9ca3af" />
-                      <div>Rasm yuklanmagan</div>
+                      <div>{t("reportDetail.imageMissing")}</div>
                     </EmptyState>
                   )}
                 </MediaContent>
@@ -471,7 +473,7 @@ export default function StudentReportDetail() {
               <MediaBox>
                 <MediaHeader>
                   <FaMapMarkerAlt />
-                  Joylashuv
+                  {t("reportDetail.location")}
                 </MediaHeader>
                 <MediaContent>
                   {position ? (
@@ -506,7 +508,7 @@ export default function StudentReportDetail() {
                   ) : (
                     <EmptyState>
                       <FaMapMarkerAlt size={48} color="#9ca3af" />
-                      <div>Joylashuv ko'rsatilmagan</div>
+                      <div>{t("reportDetail.locationMissing")}</div>
                     </EmptyState>
                   )}
                 </MediaContent>
@@ -520,15 +522,15 @@ export default function StudentReportDetail() {
           <Section>
             <SectionTitle>
               <FaFileAlt />
-              Hisobot
+              {t("reportDetail.report")}
             </SectionTitle>
             <div style={{ textAlign: "center", padding: "40px" }}>
               <FaExclamationCircle size={48} color="#9ca3af" />
               <h3 style={{ color: "#6b7280", margin: "20px 0 10px 0" }}>
-                Hisobot hali yuklanmagan
+                {t("reportDetail.reportMissing")}
               </h3>
               <p style={{ color: "#9ca3af" }}>
-                Talaba hali bu amaliyot kuni uchun hisobot yuklamagan
+                {t("reportDetail.studentNotUploaded")}
               </p>
             </div>
           </Section>

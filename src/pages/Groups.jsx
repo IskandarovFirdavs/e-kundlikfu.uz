@@ -4,6 +4,7 @@ import { lightTheme, darkTheme } from "../styles/theme.js";
 import { HiMiniUserGroup } from "react-icons/hi2";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
@@ -216,6 +217,7 @@ export default function Groups({ isDark = false, onThemeChange }) {
 
   const theme = isDark ? darkTheme : lightTheme;
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -258,9 +260,9 @@ export default function Groups({ isDark = false, onThemeChange }) {
   }, [directionId]);
 
   // render
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
-  if (!data) return <div className="p-4">No data found</div>;
+  if (loading) return <div className="p-4">{t("catalog.loading")}</div>;
+  if (error) return <div className="p-4 text-red-600">{t("catalog.error")} {error}</div>;
+  if (!data) return <div className="p-4">{t("catalog.noData")}</div>;
 
   const groups = directionId ? data?.groups || [] : data || [];
   const directionName =
@@ -273,7 +275,7 @@ export default function Groups({ isDark = false, onThemeChange }) {
       {/* Directions Section */}
       <DirectionsSection>
         <HeaderRow>
-          <SectionTitle>{data.name || directionName} GURUHLARI</SectionTitle>
+          <SectionTitle>{data.name || directionName} {t("catalog.groups")}</SectionTitle>
 
           <div
             style={{
@@ -283,12 +285,12 @@ export default function Groups({ isDark = false, onThemeChange }) {
               height: "100%",
             }}
           >
-            <Counter>{groups.length} ta guruh</Counter>
+            <Counter>{groups.length} {t("catalog.groupsCount")}</Counter>
           </div>
         </HeaderRow>
         {groups.length === 0 && (
           <p style={{ padding: "20px", color: theme.text }}>
-            Hozircha guruhlar mavjud emas.
+            {t("catalog.noGroups")}
           </p>
         )}
         {groups.map((grp) => (
@@ -301,8 +303,8 @@ export default function Groups({ isDark = false, onThemeChange }) {
                 <HiMiniUserGroup />
               </CellIcon>
               <CellContent>
-                <CellLabel>Guruh</CellLabel>
-                <CellValue>{grp.group_number} guruhi</CellValue>{" "}
+                <CellLabel>{t("catalog.group")}</CellLabel>
+                <CellValue>{grp.group_number} {t("catalog.groupSuffix")}</CellValue>{" "}
               </CellContent>
             </TableCell>
           </DirectionRow>

@@ -8,6 +8,7 @@ import { MdAccessTime } from "react-icons/md";
 import { FaEyeSlash } from "react-icons/fa6";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import api from "../services/api.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
@@ -315,6 +316,7 @@ const DaysMap = styled.div`
 `;
 
 export default function StudentDetail({ isDark = false }) {
+  const { t } = useLanguage();
   const { id } = useParams();
   const studentId = id;
 
@@ -393,10 +395,10 @@ export default function StudentDetail({ isDark = false }) {
   };
 
   // render
-  if (!studentId) return <div className="p-4">No id provided .</div>;
-  if (loading) return <div className="p-4">Loading . .</div>;
-  if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
-  if (!day) return <div className="p-4">No data found for id: {studentId}</div>;
+  if (!studentId) return <div className="p-4">{t("studentDetail.noId")}</div>;
+  if (loading) return <div className="p-4">{t("studentDetail.loading")}</div>;
+  if (error) return <div className="p-4 text-red-600">{t("studentDetail.error")} {error}</div>;
+  if (!day) return <div className="p-4">{t("studentDetail.noData")} {studentId}</div>;
 
   return (
     <DashboardContainer>
@@ -407,18 +409,18 @@ export default function StudentDetail({ isDark = false }) {
             <br />
             <p style={{ fontSize: "16px", opacity: 0.7, margin: "0px" }}>
               {day.attached_teacher.first_name} {day.attached_teacher.last_name}{" "}
-              || {day.group.group_number} - guruhi
+              || {day.group.group_number} - {t("studentDetail.group")}
             </p>
           </SectionTitle>
           <Count>
-            <Counter>{day.practice_days?.length || 0} ta amalyot</Counter>
+            <Counter>{day.practice_days?.length || 0} {t("studentDetail.practiceCount")}</Counter>
           </Count>
         </HeaderRow>
 
         {day.practice_days?.length === 0 ? (
           <DaysMap>
             <FaUserGraduate />
-            <p>Hozircha amaliyotlar mavjud emas</p>
+            <p>{t("studentDetail.noPractices")}</p>
           </DaysMap>
         ) : (
           day.practice_days.map((prc) => (
@@ -441,7 +443,7 @@ export default function StudentDetail({ isDark = false }) {
                 <CellContent>
                   <CellIconWrapper>
                     <PiStudentBold />
-                    <CellLabel>Mas'ul Shaxs</CellLabel>
+                    <CellLabel>{t("studentDetail.supervisor")}</CellLabel>
                   </CellIconWrapper>
                   <CellValue>{prc.duty_name}</CellValue>
                 </CellContent>
@@ -450,7 +452,7 @@ export default function StudentDetail({ isDark = false }) {
                 <CellContent>
                   <CellIconWrapper>
                     <FaLocationDot />
-                    <CellLabel>Joylashuv</CellLabel>
+                    <CellLabel>{t("studentDetail.location")}</CellLabel>
                   </CellIconWrapper>
                   <CellValue>{prc.address}</CellValue>
                 </CellContent>
@@ -459,7 +461,7 @@ export default function StudentDetail({ isDark = false }) {
                 <CellContent>
                   <CellIconWrapper>
                     <MdAccessTime />
-                    <CellLabel>Boshlanish vaqti</CellLabel>
+                    <CellLabel>{t("studentDetail.startTime")}</CellLabel>
                   </CellIconWrapper>
                   <CellValue>{prc.start_time}</CellValue>
                 </CellContent>
@@ -468,7 +470,7 @@ export default function StudentDetail({ isDark = false }) {
                 <CellContent>
                   <CellIconWrapper>
                     <MdAccessTime />
-                    <CellLabel>Tugash vaqti</CellLabel>
+                    <CellLabel>{t("studentDetail.endTime")}</CellLabel>
                   </CellIconWrapper>
                   <CellValue>{prc.end_time}</CellValue>
                 </CellContent>
@@ -484,9 +486,9 @@ export default function StudentDetail({ isDark = false }) {
                 <CellContent>
                   <CellIconWrapper>
                     <FaLocationDot />
-                    <CellLabel>Tashkilot</CellLabel>
+                    <CellLabel>{t("studentDetail.organization")}</CellLabel>
                   </CellIconWrapper>
-                  <CellValue>{prc.org_name || "Not specified"}</CellValue>
+                  <CellValue>{prc.org_name || t("dashboard.notSpecified")}</CellValue>
                 </CellContent>
                 <ScoreBadge
                   style={{ display: "flex", justifyContent: "center" }}

@@ -9,6 +9,7 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import { useParams } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 // Leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
@@ -192,7 +193,8 @@ const TextArea = styled.textarea`
   font-family: inherit;
   resize: vertical;
   border-color: ${(props) => (props.hasError ? "#ef4444" : "#d0d7e2")};
-
+  background: none;
+  color: ${(props) => props.theme.text};
   &:focus {
     outline: none;
     border-color: #3b82f6;
@@ -272,19 +274,28 @@ const Center = styled.div`
   justify-content: center;
 `;
 
-const getStatusDisplay = (status) => {
-  switch (status) {
-    case "pending":
-      return "Kutilmoqda";
-    case "completed":
-      return "Yakunlangan";
-    case "approved":
-      return "Tasdiqlangan";
-    case "rejected":
-      return "Rad etilgan";
-    default:
-      return status;
-  }
+const getStatusDisplay = (status, language) => {
+  const labels = {
+    uz: {
+      pending: "Kutilmoqda",
+      completed: "Yakunlangan",
+      approved: "Tasdiqlangan",
+      rejected: "Rad etilgan",
+    },
+    ru: {
+      pending: "Ожидает",
+      completed: "Завершено",
+      approved: "Одобрено",
+      rejected: "Отклонено",
+    },
+    en: {
+      pending: "Pending",
+      completed: "Completed",
+      approved: "Approved",
+      rejected: "Rejected",
+    },
+  };
+  return labels[language]?.[status] || status;
 };
 
 const getStatusClass = (status) => {
@@ -332,6 +343,7 @@ const getDistanceFromLatLonInM = (lat1, lon1, lat2, lon2) => {
 export default function Create({ onSubmissionSuccess }) {
   const { practiceDayId } = useParams();
   const navigate = useNavigate();
+  const { language, t } = useLanguage();
 
   const [practiceDay, setPracticeDay] = useState(null);
   const [practiceDayLoading, setPracticeDayLoading] = useState(true);
@@ -354,7 +366,7 @@ export default function Create({ onSubmissionSuccess }) {
         const fetched = await api.getPracticeDay(practiceDayId);
         setPracticeDay(fetched);
       } catch (err) {
-        setErrors({ load: "Amaliyot kuni yuklanmadi" });
+        setErrors({ load: "load" });
       } finally {
         setPracticeDayLoading(false);
       }
@@ -370,7 +382,7 @@ export default function Create({ onSubmissionSuccess }) {
       if (file.size > 5 * 1024 * 1024) {
         setErrors((prev) => ({
           ...prev,
-          image: "Rasm hajmi 5MB dan oshmasligi kerak",
+          image: t("report.imageTooLarge"),
         }));
         return;
       }
@@ -384,7 +396,7 @@ export default function Create({ onSubmissionSuccess }) {
     if (!navigator.geolocation) {
       setErrors((prev) => ({
         ...prev,
-        location: "Brauzer geolokatsiyani qo'llab-quvvatlamaydi",
+        location: t("report.locationUnsupported"),
       }));
       return;
     }
@@ -404,14 +416,14 @@ export default function Create({ onSubmissionSuccess }) {
             lat,
             lng,
             targetCoords.lat,
-            targetCoords.lng
+            targetCoords.lng,
           );
           const inside = dist <= 500;
           setIsInsideRadius(inside);
           if (!inside) {
             setErrors((prev) => ({
               ...prev,
-              radius: `Siz amaliyot joyidan uzoqdasiz (500m ichida bo'lish kerak)`,
+              radius: t("report.radiusError"),
             }));
           } else {
             setErrors((prev) => ({ ...prev, radius: null }));
@@ -420,21 +432,19 @@ export default function Create({ onSubmissionSuccess }) {
       },
       (error) => {
         setLocationLoading(false);
-        let msg = "Lokatsiya olinmadi";
+        let msg = t("report.locationFailed");
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            msg =
-              "Ruxsat rad etildi. Brauzer sozlamalarida lokatsiyaga ruxsat bering.";
+            msg = t("report.locationDenied");
             break;
           case error.POSITION_UNAVAILABLE:
-            msg = "Lokatsiya ma'lumotlari mavjud emas.";
+            msg = t("report.locationUnavailable");
             break;
           case error.TIMEOUT:
-            msg =
-              "Lokatsiya olish vaqti tugadi. Iltimos, qayta urinib ko'ring.";
+            msg = t("report.locationTimeout");
             break;
           default:
-            msg = "Noma'lum xatolik: " + error.message;
+            msg = t("report.locationUnknown") + " " + error.message;
         }
         setErrors((prev) => ({ ...prev, location: msg }));
       },
@@ -442,17 +452,17 @@ export default function Create({ onSubmissionSuccess }) {
         enableHighAccuracy: true,
         timeout: 20000,
         maximumAge: 60000,
-      }
+      },
     );
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!imageFile) newErrors.image = "Surat yuklang";
-    if (!notes.trim()) newErrors.notes = "Izoh yozing";
-    if (!coords.lat) newErrors.location = "Lokatsiyani oling";
+    if (!imageFile) newErrors.image = t("report.uploadImage");
+    if (!notes.trim()) newErrors.notes = t("report.writeNote");
+    if (!coords.lat) newErrors.location = t("report.getLocationError");
     if (targetCoords && !isInsideRadius)
-      newErrors.radius = "Amaliyot joyidan 500m ichida bo'ling";
+      newErrors.radius = t("report.outsideRadius");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -471,9 +481,8 @@ export default function Create({ onSubmissionSuccess }) {
       if (onSubmissionSuccess) onSubmissionSuccess();
       navigate("/student/dashboard");
     } catch (err) {
-      let msg = "Xatolik yuz berdi";
-      if (err.response?.status === 409)
-        msg = "Bugun hisobot allaqachon yuborilgan";
+      let msg = t("report.submitError");
+      if (err.response?.status === 409) msg = t("report.duplicate");
       setErrors({ submit: msg });
     } finally {
       setLoading(false);
@@ -494,7 +503,7 @@ export default function Create({ onSubmissionSuccess }) {
   if (practiceDayLoading) {
     return (
       <Layout>
-        <p>Yuklanmoqda...</p>
+        <p>{t("report.loading")}</p>
       </Layout>
     );
   }
@@ -502,7 +511,7 @@ export default function Create({ onSubmissionSuccess }) {
   if (!practiceDay) {
     return (
       <Layout>
-        <ErrorMessage>Amaliyot kuni topilmadi</ErrorMessage>
+        <ErrorMessage>{t("report.notFound")}</ErrorMessage>
       </Layout>
     );
   }
@@ -515,29 +524,29 @@ export default function Create({ onSubmissionSuccess }) {
             <Side>
               <PracticeDayInfo>
                 <h3>
-                  Amaliyot kuni #{practiceDay.id}
+                  {t("report.practiceDay")} #{practiceDay.id}
                   <StatusBadge className={getStatusClass(practiceDay.status)}>
-                    {getStatusDisplay(practiceDay.status)}
+                    {getStatusDisplay(practiceDay.status, language)}
                   </StatusBadge>
                 </h3>
                 <div className="info-row">
-                  <strong>Sana:</strong>
+                  <strong>{t("report.date")}</strong>
                   <span>{practiceDay.date}</span>
                 </div>
                 <div className="info-row">
-                  <strong>Mas'ul shaxs:</strong>
+                  <strong>{t("report.supervisor")}</strong>
                   <span>{practiceDay.duty_name}</span>
                 </div>
                 <div className="info-row">
-                  <strong>Tashkilot:</strong>
+                  <strong>{t("report.organization")}</strong>
                   <span>{practiceDay.org_name}</span>
                 </div>
                 <div className="info-row">
-                  <strong>Manzil:</strong>
-                  <span>{practiceDay.address || "Ko'rsatilmagan"}</span>
+                  <strong>{t("report.address")}</strong>
+                  <span>{practiceDay.address || t("report.notSpecified")}</span>
                 </div>
                 <div className="info-row">
-                  <strong>Vaqt:</strong>
+                  <strong>{t("report.time")}</strong>
                   <span>
                     {practiceDay.start_time} - {practiceDay.end_time}
                   </span>
@@ -579,10 +588,12 @@ export default function Create({ onSubmissionSuccess }) {
                     color: "#6b7280",
                   }}
                 >
-                  Lokatsiya ma'lumotlari mavjud emas
+                  {t("report.noLocation")}
                 </div>
               )}
-              <BigButton onClick={() => setShowForm(true)}>Yuklash</BigButton>
+              <BigButton onClick={() => setShowForm(true)}>
+                {t("report.upload")}
+              </BigButton>
             </Side>
           </RowContainer>
         </FormContainer>
@@ -590,17 +601,15 @@ export default function Create({ onSubmissionSuccess }) {
         <FormContainer>
           <RowContainer>
             <Side>
-              <h2>Suratingizni yuklang *</h2>
+              <h2>{t("report.uploadPhoto")}</h2>
               <ImageUploadBox htmlFor="image-upload" hasError={errors.image}>
                 {!image ? (
                   <Center>
                     <div>+</div>
-                    <div className="placeholder">
-                      Surat yuklash uchun bosing
-                    </div>
+                    <div className="placeholder">{t("report.choosePhoto")}</div>
                   </Center>
                 ) : (
-                  <PreviewImg src={image} alt="Oldindan ko'rish" />
+                  <PreviewImg src={image} alt={t("report.preview")} />
                 )}
                 <input
                   id="image-upload"
@@ -614,9 +623,9 @@ export default function Create({ onSubmissionSuccess }) {
             </Side>
 
             <Side>
-              <h2>Amaliyot davomida bajarilgan ishlar *</h2>
+              <h2>{t("report.work")}</h2>
               <TextArea
-                placeholder="Bugungi kun davomida bajargan ishlaringizni batafsil yozing..."
+                placeholder={t("report.workPlaceholder")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 hasError={errors.notes}
@@ -625,13 +634,15 @@ export default function Create({ onSubmissionSuccess }) {
 
               <Buttons>
                 <Btn onClick={getLocation} disabled={locationLoading}>
-                  {locationLoading ? "Olinmoqda..." : "Lokatsiyani olish"}
+                  {locationLoading
+                    ? t("report.gettingLocation")
+                    : t("report.getLocation")}
                 </Btn>
                 <Btn
                   onClick={handleSubmit}
                   disabled={loading || !coords.lat || !isInsideRadius}
                 >
-                  {loading ? "Yuborilmoqda..." : "Hisobotni jo'natish"}
+                  {loading ? t("report.sending") : t("report.send")}
                 </Btn>
               </Buttons>
 
@@ -642,7 +653,7 @@ export default function Create({ onSubmissionSuccess }) {
               {errors.submit && <ErrorMessage>⚠ {errors.submit}</ErrorMessage>}
               {coords.lat && !errors.radius && (
                 <p style={{ color: "#10b981", marginTop: "10px" }}>
-                  ✓ Lokatsiya muvaffaqiyatli olindi
+                  ✓ {t("report.locationSuccess")}
                 </p>
               )}
             </Side>

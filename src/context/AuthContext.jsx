@@ -55,16 +55,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (username, password) => {
-    setLoading(true);
-
     try {
-      // 1. Login qilish
-      const loginData = await api.login(username, password);
+      // Login xato bo‘lsa, api.login xato qaytaradi va profil so‘rovi bajarilmaydi.
+      await api.login(username, password);
 
-      // 2. User ma'lumotlarini olish
+      // Profil faqat token muvaffaqiyatli olingandan keyin yuklanadi.
       const userData = await api.getCurrentUser();
 
-      // 3. State va localStorage'ga saqlash
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
 
@@ -74,16 +71,19 @@ export const AuthProvider = ({ children }) => {
         token: api.token,
       };
     } catch (error) {
+      api.token = "";
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("user");
+      setUser(null);
+
       return {
         success: false,
-        error: error.message,
+        error: error.message || "Login amalga oshmadi.",
       };
-    } finally {
-      setLoading(false);
     }
   };
 
-  const logout = () => {
+    const logout = () => {
     api.logout();
     setUser(null);
     localStorage.removeItem("user");

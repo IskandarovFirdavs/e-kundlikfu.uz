@@ -4,6 +4,7 @@ import { lightTheme, darkTheme } from "../styles/theme.js";
 import { FaUniversity, FaUsers } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
@@ -347,6 +348,7 @@ const CellContent = styled.div`
 export default function Faculties({ isDark = false, onThemeChange }) {
   const theme = isDark ? darkTheme : lightTheme;
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState("all");
   const [faculties, setFaculties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -375,7 +377,7 @@ export default function Faculties({ isDark = false, onThemeChange }) {
         const data = await api.getFaculties();
         setFaculties(data);
       } catch (err) {
-        setError("Ma'lumotlarni yuklashda xatolik yuz berdi: " + err.message);
+        setError(t("catalog.error") + " Ma’lumotlarni yuklashda xatolik yuz berdi: " + err.message);
       } finally {
         setLoading(false);
       }
@@ -396,7 +398,7 @@ export default function Faculties({ isDark = false, onThemeChange }) {
             color: theme.text,
           }}
         >
-          Yuklanmoqda...
+          {t("catalog.loading")}
         </div>
       </DashboardContainer>
     );
@@ -429,9 +431,9 @@ export default function Faculties({ isDark = false, onThemeChange }) {
             <FaUniversity />
           </StatIcon>
           <StatContent>
-            <StatLabel>Fakultetlar</StatLabel>
+            <StatLabel>{t("catalog.faculties")}</StatLabel>
             <StatNumber>{faculties.length}</StatNumber>
-            <StatDescription>Jami fakultetlar soni</StatDescription>
+            <StatDescription>{t("catalog.totalFaculties")}</StatDescription>
           </StatContent>
         </StatCard>
 
@@ -440,14 +442,14 @@ export default function Faculties({ isDark = false, onThemeChange }) {
             <FaUsers />
           </StatIcon>
           <StatContent>
-            <StatLabel>Kafedralar</StatLabel>
+            <StatLabel>{t("catalog.departments")}</StatLabel>
             <StatNumber>
               {faculties.reduce(
                 (sum, f) => sum + (f.departments?.length || 0),
                 0
               )}
             </StatNumber>
-            <StatDescription>Jami kafedralar soni</StatDescription>
+            <StatDescription>{t("catalog.totalDepartments")}</StatDescription>
           </StatContent>
         </StatCard>
       </StatsGrid>
@@ -455,9 +457,9 @@ export default function Faculties({ isDark = false, onThemeChange }) {
       {/* Faculties Section */}
       <FacultiesSection>
         <HeaderRow>
-          <SectionTitle>FAKULTETLAR RO'YXATI</SectionTitle>
+          <SectionTitle>{t("catalog.facultyList")}</SectionTitle>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Counter>{faculties.length} ta</Counter>
+            <Counter>{faculties.length} {t("catalog.count")}</Counter>
           </div>
         </HeaderRow>
 
@@ -470,7 +472,7 @@ export default function Faculties({ isDark = false, onThemeChange }) {
               opacity: 0.7,
             }}
           >
-            Hech qanday fakultet topilmadi
+            {t("catalog.noFaculties")}
           </div>
         ) : (
           faculties.map((f) => (
@@ -482,7 +484,7 @@ export default function Faculties({ isDark = false, onThemeChange }) {
               <TableCell>
                 <CellContent>
                   <CellIconWrapper>
-                    <CellLabel>Fakultet</CellLabel>
+                    <CellLabel>{t("catalog.faculty")}</CellLabel>
                   </CellIconWrapper>
                   <CellValue>{f.name}</CellValue>
                   <CellValue>{f.abbr}</CellValue>
@@ -493,7 +495,7 @@ export default function Faculties({ isDark = false, onThemeChange }) {
                 <CellContent>
                   <CellIconWrapper>
                     <FaUsers />
-                    <CellLabel>Dekan</CellLabel>
+                    <CellLabel>{t("catalog.dean")}</CellLabel>
                   </CellIconWrapper>
                   <CellValue>
                     {f.head?.first_name} {f.head?.last_name}
@@ -505,7 +507,7 @@ export default function Faculties({ isDark = false, onThemeChange }) {
                 <CellContent>
                   <CellIconWrapper>
                     <FaUsers />
-                    <CellLabel>Zam dekan</CellLabel>
+                    <CellLabel>{t("catalog.deputyDean")}</CellLabel>
                   </CellIconWrapper>
                   <CellValue>
                     {f.vice?.first_name} {f.vice?.last_name}
@@ -517,9 +519,9 @@ export default function Faculties({ isDark = false, onThemeChange }) {
                 <CellContent>
                   <CellIconWrapper>
                     <FaUniversity />
-                    <CellLabel>Kafedralar</CellLabel>
+                    <CellLabel>{t("catalog.departments")}</CellLabel>
                   </CellIconWrapper>
-                  <CellValue>{f.departments?.length || 0} ta</CellValue>
+                  <CellValue>{f.departments?.length || 0} {t("catalog.count")}</CellValue>
                 </CellContent>
               </TableCell>
 
@@ -528,16 +530,16 @@ export default function Faculties({ isDark = false, onThemeChange }) {
                 <MobileTableCell>
                   <CellContent>
                     <CellIconWrapper>
-                      <CellLabel>Fakultet</CellLabel>
+                      <CellLabel>{t("catalog.faculty")}</CellLabel>
                     </CellIconWrapper>
                     <CellValue>{f.name}</CellValue>
                   </CellContent>
                   <CellContent>
                     <CellIconWrapper>
                       <FaUniversity />
-                      <CellLabel>Kafedralar</CellLabel>
+                      <CellLabel>{t("catalog.departments")}</CellLabel>
                     </CellIconWrapper>
-                    <CellValue>{f.departments?.length || 0} ta</CellValue>
+                    <CellValue>{f.departments?.length || 0} {t("catalog.count")}</CellValue>
                   </CellContent>
                 </MobileTableCell>
               </MobileTable>

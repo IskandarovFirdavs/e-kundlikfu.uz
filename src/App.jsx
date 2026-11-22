@@ -2,11 +2,12 @@ import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider } from "styled-components";
 import { useState, useEffect } from "react";
 import { lightTheme, darkTheme } from "./styles/theme.js";
-import { AuthProvider, useAuth } from "./context/AuthContext.jsx"; // ⭐️ useAuth import qo'shildi
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import PrivateRoute from "./context/PrivateRoute.jsx";
 import Navbar from "./layout/Navbar.jsx";
 import AppWrapper from "./styles/WeatherBackground.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
+
 // Pages
 import Faculties from "./pages/Faculties.jsx";
 import Directions from "./pages/Directions.jsx";
@@ -22,22 +23,27 @@ import Groups from "./pages/Groups.jsx";
 
 import { ROLES } from "./constants/roles.js";
 
+// ✅ TUZATILDI: useLanguage ham import qilindi
+import { LanguageProvider, useLanguage } from "./context/LanguageContext.jsx";
+
 function AppContent() {
   const [dark, setDark] = useState(() => {
     return localStorage.getItem("preferredTheme") === "dark";
   });
 
-  const { user, loading } = useAuth(); // ⭐️ useAuth qo'shildi
+  // ✅ Endi useLanguage xatosiz ishlaydi
+  const { t } = useLanguage();
+  const { user, loading } = useAuth();
   const location = useLocation();
 
-  // ⭐️ Muhim o'zgarish: Navbar faqat authenticated userlar va login sahifasida emas ko'rinadi
+  // Navbar faqat authenticated userlar va login sahifasida emas ko'rinadi
   const hideNavbar = location.pathname === "/" || !user;
 
   useEffect(() => {
     localStorage.setItem("preferredTheme", dark ? "dark" : "light");
   }, [dark]);
 
-  // ⭐️ Agar hali loading bo'lsa
+  // Agar hali loading bo'lsa
   if (loading) {
     return (
       <div
@@ -61,7 +67,7 @@ function AppContent() {
               margin: "0 auto 20px",
             }}
           ></div>
-          <p>Tizim yuklanmoqda...</p>
+          <p>{t("catalog.loading")}</p>
         </div>
 
         <style>{`
@@ -77,18 +83,17 @@ function AppContent() {
   return (
     <ThemeProvider theme={dark ? darkTheme : lightTheme}>
       <AppWrapper>
-        {/* ⭐️ Navbar faqat login sahifasida va authenticated userlar uchun ko'rinadi */}
+        {/* Navbar faqat login sahifasida va authenticated userlar uchun ko'rinadi */}
         {!hideNavbar && <Navbar dark={dark} setDark={setDark} user={user} />}
 
         <Routes>
-          {/* ⭐️ Login sahifasi - faqat authenticated bo'lmaganlar uchun */}
+          {/* Login sahifasi - faqat authenticated bo'lmaganlar uchun */}
           <Route
             path="/"
             element={
               !user ? (
                 <Login dark={dark} setDark={setDark} />
               ) : (
-                // Agar user authenticated bo'lsa, uning roliga qarab yo'naltirish
                 <Navigate
                   to={
                     user.role === ROLES.STUDENT
@@ -340,9 +345,11 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

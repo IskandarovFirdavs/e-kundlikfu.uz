@@ -2,7 +2,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import styled, { keyframes } from "styled-components";
-// import { useNavigate } from "react-router-dom"
 import {
   FaSearch,
   FaEdit,
@@ -23,52 +22,53 @@ import {
   FaCheckCircle,
   FaExclamationCircle,
   FaEye,
-  FaFilter, // Import FaFilter here
+  FaFilter,
   FaSync,
   FaFileAlt,
   FaDownload,
   FaEyeSlash,
-  FaInfoCircle, // Import FaInfoCircle here
+  FaInfoCircle,
+  FaChevronDown,
 } from "react-icons/fa";
-// import api from "../services/api"
-// import { MapContainer, TileLayer, Marker } from "react-leaflet"
-// import "leaflet/dist/leaflet.css"
 import api from "../services/api";
+import PracticeLocationPicker from "../components/PracticeLocationPicker.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
-// Modern gradient animation
+// Animatsiyalar
 const gradientAnimation = keyframes`
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 `;
-
 const slideIn = keyframes`
   from { transform: translateY(-10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 `;
-
 const fadeIn = keyframes`
   from { opacity: 0; }
   to { opacity: 1; }
 `;
-
 const spin = keyframes`
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 `;
 
-// Styled Components - Modernized
+// --- STYLED COMPONENTS ---
+
 const DashboardContainer = styled.div`
   display: flex;
   min-height: calc(100vh - 80px);
   background: ${(p) => p.theme.backgroundGradient || p.theme.background};
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
     sans-serif;
   animation: ${fadeIn} 0.3s ease-out;
   z-index: 0;
 
-  /* Added responsive flex direction for mobile */
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
     flex-direction: column;
     min-height: 100%;
   }
@@ -86,17 +86,11 @@ const Sidebar = styled.div`
   z-index: 100;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 
-  /* Enhanced responsive breakpoints for tablet and mobile */
   @media (max-width: 1024px) {
     width: 240px;
   }
 
   @media (max-width: 768px) {
-    width: 70px;
-    padding: 20px 0;
-  }
-
-  @media (max-width: 640px) {
     position: relative;
     width: 100%;
     height: auto;
@@ -104,18 +98,12 @@ const Sidebar = styled.div`
     border-right: none;
     border-bottom: 1px solid ${(p) => p.theme.border};
     overflow-y: visible;
-    overflow-x: auto;
-  }
-
-  @media (max-width: 480px) {
-    padding: 12px 0;
   }
 
   &::-webkit-scrollbar {
     width: 6px;
     height: 4px;
   }
-
   &::-webkit-scrollbar-thumb {
     background: ${(p) => p.theme.primary}40;
     border-radius: 10px;
@@ -129,7 +117,6 @@ const MainContent = styled.div`
   max-width: calc(100vw - 280px);
   z-index: -1;
 
-  /* Enhanced responsive padding and margin adjustments */
   @media (max-width: 1024px) {
     margin-left: 240px;
     padding: 24px;
@@ -137,65 +124,39 @@ const MainContent = styled.div`
   }
 
   @media (max-width: 768px) {
-    margin-left: 70px;
-    padding: 16px;
-    max-width: calc(100vw - 70px);
-  }
-
-  @media (max-width: 640px) {
     margin-left: 0;
-    padding: 12px;
+    padding: 16px;
     max-width: 100%;
-    min-height: auto;
   }
 
   @media (max-width: 480px) {
-    padding: 8px;
+    padding: 12px;
   }
 `;
 
 const SidebarHeader = styled.div`
-  padding: 0 24px 24px;
+  padding: 0 24px 16px;
   border-bottom: 1px solid ${(p) => p.theme.border}40;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 
-  /* Added responsive padding for mobile */
   @media (max-width: 768px) {
-    padding: 0 16px 16px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 0 8px 12px;
+    padding: 0 16px 12px;
     margin-bottom: 12px;
   }
 `;
 
 const AppTitle = styled.h1`
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 12px;
-
-  /* Added responsive font sizing and centering */
-  @media (max-width: 1024px) {
-    font-size: 1.5rem;
-  }
+  color: ${(p) => p.theme.text};
 
   @media (max-width: 768px) {
     justify-content: center;
     font-size: 1.3rem;
-    gap: 8px;
-  }
-
-  @media (max-width: 640px) {
-    font-size: 1.1rem;
-    gap: 6px;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1rem;
   }
 `;
 
@@ -204,20 +165,22 @@ const SidebarMenu = styled.ul`
   padding: 0;
   margin: 0;
 
-  /* Added horizontal scroll for mobile sidebar */
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
     display: flex;
     overflow-x: auto;
-    gap: 8px;
-    padding: 0 8px;
+    gap: 10px;
+    padding: 0 16px 8px 16px;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 `;
 
 const MenuItem = styled.li`
   margin-bottom: 4px;
 
-  /* Responsive margin for mobile horizontal menu */
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
     margin-bottom: 0;
     flex-shrink: 0;
   }
@@ -226,7 +189,7 @@ const MenuItem = styled.li`
 const MenuLink = styled.a`
   display: flex;
   align-items: center;
-  padding: 16px 24px;
+  padding: 12px 24px;
   color: ${(p) => p.theme.text}90;
   text-decoration: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -241,7 +204,6 @@ const MenuLink = styled.a`
     background: ${(p) => p.theme.primary}08;
     color: ${(p) => p.theme.primary};
     transform: translateX(4px);
-
     &:before {
       content: "";
       position: absolute;
@@ -257,7 +219,6 @@ const MenuLink = styled.a`
     background: ${(p) => p.theme.primary}12;
     color: ${(p) => p.theme.primary};
     border-left-color: ${(p) => p.theme.primary};
-
     &:after {
       content: "";
       position: absolute;
@@ -269,53 +230,30 @@ const MenuLink = styled.a`
     }
   }
 
-  /* Added responsive styles for tablet and mobile */
-  @media (max-width: 1024px) {
-    padding: 14px 18px;
-    gap: 12px;
-    font-size: 14px;
-  }
-
   @media (max-width: 768px) {
-    justify-content: center;
-    padding: 16px;
-    gap: 0;
-
-    &:after {
-      display: none;
-    }
-
-    span {
-      display: none;
-    }
-  }
-
-  @media (max-width: 640px) {
-    padding: 12px 16px;
+    padding: 8px 16px;
     border-left: none;
-    border-bottom: 3px solid transparent;
-    border-radius: 0;
-    flex-shrink: 0;
-    white-space: nowrap;
+    border-radius: 8px;
+    gap: 8px;
+    background: ${(p) => p.theme.background};
+    border: 1px solid ${(p) => p.theme.border}60;
 
     &:hover {
-      transform: translateY(-2px);
-      border-bottom-color: ${(p) => p.theme.primary};
+      transform: none;
+      border-color: ${(p) => p.theme.primary};
+      &:before {
+        display: none;
+      }
     }
 
     &.active {
-      border-bottom-color: ${(p) => p.theme.primary};
+      background: ${(p) => p.theme.primary}15;
+      border-color: ${(p) => p.theme.primary};
       border-left: none;
+      &:after {
+        display: none;
+      }
     }
-
-    span {
-      display: inline;
-    }
-  }
-
-  @media (max-width: 480px) {
-    padding: 10px 12px;
-    font-size: 12px;
   }
 `;
 
@@ -324,18 +262,9 @@ const MenuIcon = styled.div`
   width: 24px;
   text-align: center;
 
-  /* Added responsive font sizing */
   @media (max-width: 768px) {
-    font-size: 20px;
-  }
-
-  @media (max-width: 640px) {
     font-size: 16px;
     width: auto;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 14px;
   }
 `;
 
@@ -343,37 +272,20 @@ const ContentHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
   animation: ${slideIn} 0.4s ease-out;
 
-  /* Added responsive gap and margin */
-  @media (max-width: 1024px) {
-    margin-bottom: 24px;
-    gap: 16px;
-  }
-
   @media (max-width: 768px) {
-    margin-bottom: 20px;
-    gap: 12px;
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  @media (max-width: 640px) {
-    margin-bottom: 16px;
-    gap: 10px;
-  }
-
-  @media (max-width: 480px) {
-    margin-bottom: 12px;
-    gap: 8px;
+    gap: 12px;
   }
 `;
 
 const PageTitle = styled.h1`
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 700;
   color: ${(p) => p.theme.text};
   margin: 0;
@@ -389,37 +301,12 @@ const PageTitle = styled.h1`
     border-radius: 2px;
   }
 
-  /* Added responsive font sizing and bar dimensions */
-  @media (max-width: 1024px) {
-    font-size: 1.75rem;
-  }
-
   @media (max-width: 768px) {
     font-size: 1.5rem;
-    gap: 10px;
-
+    gap: 8px;
     &:before {
       height: 20px;
       width: 3px;
-    }
-  }
-
-  @media (max-width: 640px) {
-    font-size: 1.25rem;
-    gap: 8px;
-
-    &:before {
-      height: 18px;
-      width: 3px;
-    }
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1.1rem;
-    gap: 6px;
-
-    &:before {
-      height: 16px;
     }
   }
 `;
@@ -433,58 +320,29 @@ const ActionButton = styled.button`
   background-size: 200% 200%;
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 10px;
+  padding: 10px 18px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 15px;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px ${(p) => p.theme.primary}40;
+  white-space: nowrap;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 25px ${(p) => p.theme.primary}60;
-    animation: ${gradientAnimation} 2s ease infinite;
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  /* Added responsive padding and font size */
-  @media (max-width: 1024px) {
-    padding: 11px 22px;
-    font-size: 14px;
-    gap: 8px;
+    box-shadow: 0 6px 20px ${(p) => p.theme.primary}60;
   }
 
   @media (max-width: 768px) {
-    padding: 10px 20px;
-    font-size: 13px;
-    gap: 6px;
-    width: 100%;
-  }
-
-  @media (max-width: 640px) {
-    padding: 9px 16px;
-    font-size: 12px;
-    gap: 5px;
-  }
-
-  @media (max-width: 480px) {
     padding: 8px 12px;
-    font-size: 11px;
-    gap: 4px;
-    border-radius: 8px;
+    font-size: 12px;
+    gap: 6px;
+    flex: 1;
   }
 `;
 
@@ -500,35 +358,28 @@ const RefreshButton = styled(ActionButton)`
   }
 `;
 
+const ButtonsContainer = styled.div`
+  display: flex;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    gap: 8px;
+  }
+`;
+
 const Toolbar = styled.div`
   display: flex;
   gap: 16px;
   margin-bottom: 24px;
   flex-wrap: wrap;
   align-items: center;
-  animation: ${slideIn} 0.5s ease-out;
-
-  /* Added responsive gap and layout adjustments */
-  @media (max-width: 1024px) {
-    gap: 12px;
-    margin-bottom: 20px;
-  }
 
   @media (max-width: 768px) {
     gap: 10px;
     margin-bottom: 16px;
     flex-direction: column;
     align-items: stretch;
-  }
-
-  @media (max-width: 640px) {
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  @media (max-width: 480px) {
-    gap: 6px;
-    margin-bottom: 10px;
   }
 `;
 
@@ -538,7 +389,7 @@ const SearchBox = styled.div`
   background: ${(p) => p.theme.cardBg};
   border: 2px solid ${(p) => p.theme.border}60;
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 10px 16px;
   flex: 1;
   max-width: 400px;
   gap: 12px;
@@ -550,28 +401,9 @@ const SearchBox = styled.div`
     box-shadow: 0 4px 20px ${(p) => p.theme.primary}20;
   }
 
-  /* Added responsive max-width and padding */
-  @media (max-width: 1024px) {
-    max-width: 350px;
-    padding: 11px 14px;
-  }
-
   @media (max-width: 768px) {
     max-width: 100%;
     padding: 10px 12px;
-    gap: 10px;
-  }
-
-  @media (max-width: 640px) {
-    max-width: 100%;
-    padding: 9px 10px;
-    border-radius: 10px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px 10px;
-    border-radius: 8px;
-    gap: 8px;
   }
 `;
 
@@ -579,25 +411,11 @@ const SearchInput = styled.input`
   border: none;
   background: transparent;
   color: ${(p) => p.theme.text};
-  font-size: 15px;
+  font-size: 14px;
   outline: none;
   width: 100%;
-
   &::placeholder {
     color: ${(p) => p.theme.text}60;
-  }
-
-  /* Added responsive font sizing */
-  @media (max-width: 768px) {
-    font-size: 14px;
-  }
-
-  @media (max-width: 640px) {
-    font-size: 13px;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 12px;
   }
 `;
 
@@ -608,39 +426,12 @@ const DataTable = styled.div`
   overflow: hidden;
   overflow-x: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  animation: ${slideIn} 0.6s ease-out;
-
-  /* Added responsive border radius */
-  @media (max-width: 768px) {
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  }
-
-  @media (max-width: 640px) {
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  }
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  min-width: 1000px;
-
-  /* Added responsive min-width for mobile */
-  @media (max-width: 1024px) {
-    min-width: 900px;
-  }
-
-  @media (max-width: 768px) {
-    min-width: 800px;
-    font-size: 14px;
-  }
-
-  @media (max-width: 640px) {
-    min-width: 700px;
-    font-size: 12px;
-  }
+  min-width: 800px;
 `;
 
 const TableHeader = styled.thead`
@@ -650,11 +441,9 @@ const TableHeader = styled.thead`
 const TableRow = styled.tr`
   border-bottom: 1px solid ${(p) => p.theme.border}20;
   transition: all 0.2s ease;
-
   &:hover {
     background: ${(p) => p.theme.primary}05;
   }
-
   &:last-child {
     border-bottom: none;
   }
@@ -663,75 +452,23 @@ const TableRow = styled.tr`
 const TableHeaderCell = styled.th.withConfig({
   shouldForwardProp: (prop) => prop !== "$sortable",
 })`
-  padding: 18px 16px;
+  padding: 16px;
   text-align: left;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: ${(p) => p.theme.text}90;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   cursor: ${(p) => (p.$sortable ? "pointer" : "default")};
   user-select: none;
   position: relative;
-
-  &:hover {
-    background: ${(p) => p.theme.background};
-
-    &:after {
-      content: "";
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 100%;
-      height: 2px;
-      background: ${(p) => p.theme.primary}40;
-    }
-  }
-
-  /* Added responsive padding and font sizing */
-  @media (max-width: 1024px) {
-    padding: 16px 12px;
-    font-size: 13px;
-  }
-
-  @media (max-width: 768px) {
-    padding: 14px 10px;
-    font-size: 12px;
-    letter-spacing: 0.3px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 12px 8px;
-    font-size: 11px;
-    letter-spacing: 0;
-  }
+  white-space: nowrap;
 `;
 
 const TableCell = styled.td`
-  padding: 16px;
+  padding: 14px 16px;
   font-size: 14px;
   color: ${(p) => p.theme.text}80;
-
-  /* Added responsive padding and font sizing */
-  @media (max-width: 1024px) {
-    padding: 14px 12px;
-    font-size: 13px;
-  }
-
-  @media (max-width: 768px) {
-    padding: 12px 10px;
-    font-size: 12px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 10px 8px;
-    font-size: 11px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px 6px;
-    font-size: 10px;
-  }
 `;
 
 const ActionCell = styled.div`
@@ -740,16 +477,6 @@ const ActionCell = styled.div`
   align-items: center;
   justify-content: flex-start;
   white-space: nowrap;
-
-  /* Added responsive gap and flex wrapping for mobile */
-  @media (max-width: 768px) {
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  @media (max-width: 640px) {
-    gap: 4px;
-  }
 `;
 
 const IconButton = styled.button`
@@ -757,7 +484,7 @@ const IconButton = styled.button`
   background: ${(p) => p.theme.background};
   color: ${(p) => p.theme.text}70;
   cursor: pointer;
-  padding: 10px;
+  padding: 8px;
   border-radius: 8px;
   transition: all 0.2s ease;
   display: flex;
@@ -768,120 +495,71 @@ const IconButton = styled.button`
   &.view {
     background: ${(p) => p.theme.primary}10;
     color: ${(p) => p.theme.primary};
-
     &:hover {
       background: ${(p) => p.theme.primary};
       color: white;
-      transform: scale(1.05);
     }
   }
-
   &.edit {
     background: #3b82f610;
     color: #3b82f6;
-
     &:hover {
       background: #3b82f6;
       color: white;
-      transform: scale(1.05);
     }
   }
-
   &.delete {
     background: #ef444410;
     color: #ef4444;
-
     &:hover {
       background: #ef4444;
       color: white;
-      transform: scale(1.05);
     }
   }
-
   &.download {
     background: #10b98110;
     color: #10b981;
-
     &:hover {
       background: #10b981;
       color: white;
-      transform: scale(1.05);
     }
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-  }
-
-  /* Added responsive padding and font sizing */
-  @media (max-width: 768px) {
-    padding: 8px;
-    font-size: 12px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 6px;
-    font-size: 10px;
   }
 `;
 
 const StatusBadge = styled.span`
-  padding: 6px 16px;
+  padding: 6px 12px;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   white-space: nowrap;
 
-  &.active {
-    background: #10b98120;
-    color: #10b981;
-    border: 1px solid #10b98140;
-  }
-
-  &.inactive {
-    background: #6b728020;
-    color: #6b7280;
-    border: 1px solid #6b728040;
-  }
-
-  &.pending {
-    background: #f59e0b20;
-    color: #f59e0b;
-    border: 1px solid #f59e0b40;
-  }
-
+  &.active,
   &.approved {
     background: #10b98120;
     color: #10b981;
     border: 1px solid #10b98140;
   }
-
+  &.inactive {
+    background: #6b728020;
+    color: #6b7280;
+    border: 1px solid #6b728040;
+  }
+  &.pending {
+    background: #f59e0b20;
+    color: #f59e0b;
+    border: 1px solid #f59e0b40;
+  }
   &.rejected {
     background: #ef444420;
     color: #ef4444;
     border: 1px solid #ef444440;
   }
-
   &.submitted {
     background: #3b82f620;
     color: #3b82f6;
     border: 1px solid #3b82f640;
-  }
-
-  /* Added responsive padding and font sizing */
-  @media (max-width: 768px) {
-    padding: 5px 12px;
-    font-size: 11px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 4px 10px;
-    font-size: 10px;
   }
 `;
 
@@ -889,159 +567,67 @@ const Pagination = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 16px 20px;
   border-top: 1px solid ${(p) => p.theme.border}30;
   background: ${(p) => p.theme.background};
 
-  /* Added responsive padding and flex direction */
   @media (max-width: 768px) {
-    padding: 16px 20px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 12px 16px;
-    gap: 8px;
     flex-direction: column;
-  }
-
-  @media (max-width: 480px) {
-    padding: 10px 12px;
-    gap: 6px;
+    gap: 12px;
   }
 `;
 
 const PaginationInfo = styled.div`
-  font-size: 14px;
+  font-size: 13px;
   color: ${(p) => p.theme.text}60;
   font-weight: 500;
-
-  /* Added responsive font sizing */
-  @media (max-width: 768px) {
-    font-size: 13px;
-  }
-
-  @media (max-width: 640px) {
-    font-size: 12px;
-    width: 100%;
-    text-align: center;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 11px;
-  }
 `;
 
 const PaginationControls = styled.div`
   display: flex;
   gap: 8px;
   align-items: center;
-
-  /* Added responsive gap and flex wrapping */
-  @media (max-width: 768px) {
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
   @media (max-width: 640px) {
     gap: 4px;
-    width: 100%;
-    justify-content: center;
-  }
-
-  @media (max-width: 480px) {
-    gap: 3px;
   }
 `;
 
 const PageButton = styled.button`
-  padding: 10px 16px;
+  padding: 8px 12px;
   border: 1px solid ${(p) => p.theme.border};
   background: ${(p) => p.theme.cardBg};
   color: ${(p) => p.theme.text};
   cursor: pointer;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 500;
-  transition: all 0.2s ease;
-  min-width: 40px;
+  min-width: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
 
   &:hover:not(:disabled) {
     border-color: ${(p) => p.theme.primary};
-    transform: translateY(-1px);
   }
-
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-
   &.active {
     border-color: ${(p) => p.theme.primary};
-    box-shadow: 0 4px 12px ${(p) => p.theme.primary}40;
-  }
-
-  /* Added responsive padding and sizing */
-  @media (max-width: 768px) {
-    padding: 8px 12px;
-    font-size: 13px;
-    min-width: 36px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 6px 10px;
-    font-size: 12px;
-    min-width: 32px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 5px 8px;
-    font-size: 11px;
-    min-width: 28px;
+    background: ${(p) => p.theme.primary}10;
+    color: ${(p) => p.theme.primary};
   }
 `;
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 80px 20px;
+  padding: 60px 20px;
   color: ${(p) => p.theme.text}60;
-
   svg {
-    font-size: 64px;
-    margin-bottom: 20px;
+    font-size: 48px;
+    margin-bottom: 16px;
     opacity: 0.5;
-  }
-
-  /* Added responsive padding and icon sizing */
-  @media (max-width: 768px) {
-    padding: 60px 16px;
-
-    svg {
-      font-size: 48px;
-      margin-bottom: 16px;
-    }
-  }
-
-  @media (max-width: 640px) {
-    padding: 40px 12px;
-
-    svg {
-      font-size: 40px;
-      margin-bottom: 12px;
-    }
-  }
-
-  @media (max-width: 480px) {
-    padding: 30px 10px;
-
-    svg {
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
   }
 `;
 
@@ -1049,29 +635,15 @@ const LoadingSpinner = styled.div`
   text-align: center;
   padding: 60px;
   color: ${(p) => p.theme.primary};
-
   svg {
     animation: ${spin} 1s linear infinite;
-  }
-
-  /* Added responsive padding */
-  @media (max-width: 768px) {
-    padding: 48px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 36px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 24px;
   }
 `;
 
 const Message = styled.div`
-  padding: 16px 20px;
+  padding: 14px 20px;
   border-radius: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1083,43 +655,13 @@ const Message = styled.div`
     color: #ef4444;
     border: 1px solid #ef444440;
   }
-
   &.success {
     background: #10b98115;
     color: #10b981;
     border: 1px solid #10b98140;
   }
-
-  &.info {
-    background: #3b82f615;
-    color: #3b82f6;
-    border: 1px solid #3b82f640;
-  }
-
-  /* Added responsive padding and gap */
-  @media (max-width: 768px) {
-    padding: 14px 16px;
-    margin-bottom: 20px;
-    gap: 10px;
-    font-size: 14px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 12px 14px;
-    margin-bottom: 16px;
-    gap: 8px;
-    font-size: 13px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 10px 12px;
-    margin-bottom: 12px;
-    gap: 6px;
-    font-size: 12px;
-  }
 `;
 
-// Modal Components
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -1135,56 +677,25 @@ const ModalOverlay = styled.div`
   padding: 20px;
   animation: ${fadeIn} 0.2s ease-out;
 
-  /* Added responsive padding for smaller screens */
-  @media (max-width: 768px) {
-    padding: 16px;
-  }
-
   @media (max-width: 640px) {
-    padding: 12px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px;
+    padding: 10px;
   }
 `;
 
 const ModalContent = styled.div`
   background: ${(p) => p.theme.cardBg};
   border-radius: 16px;
-  padding: 32px;
+  padding: 24px;
   width: 100%;
-  max-width: 800px;
-  max-height: 70vh;
+  max-width: 700px;
+  max-height: 90vh;
   overflow-y: auto;
   animation: ${slideIn} 0.3s ease-out;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 
-  /* Enhanced responsive padding and max-width */
-  @media (max-width: 1024px) {
-    padding: 28px;
-    max-width: 700px;
-  }
-
-  @media (max-width: 768px) {
-    padding: 24px;
-    max-width: 95%;
-    max-height: 80vh;
-    border-radius: 14px;
-  }
-
   @media (max-width: 640px) {
-    padding: 20px;
-    max-width: 100%;
-    max-height: 85vh;
-    border-radius: 12px;
-    margin: 0 auto;
-  }
-
-  @media (max-width: 480px) {
     padding: 16px;
-    max-height: 90vh;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 `;
 
@@ -1192,39 +703,14 @@ const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-
-  /* Added responsive margin for mobile */
-  @media (max-width: 640px) {
-    margin-bottom: 18px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  @media (max-width: 480px) {
-    margin-bottom: 14px;
-    gap: 8px;
-  }
+  margin-bottom: 20px;
 `;
 
 const ModalTitle = styled.h2`
   margin: 0;
   color: ${(p) => p.theme.text};
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
-
-  /* Added responsive font sizing */
-  @media (max-width: 768px) {
-    font-size: 1.3rem;
-  }
-
-  @media (max-width: 640px) {
-    font-size: 1.1rem;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1rem;
-  }
 `;
 
 const ModalCloseButton = styled.button`
@@ -1236,94 +722,44 @@ const ModalCloseButton = styled.button`
   border-radius: 8px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-
   &:hover {
     color: ${(p) => p.theme.text};
     background: ${(p) => p.theme.border}40;
   }
-
-  /* Added responsive padding for mobile */
-  @media (max-width: 640px) {
-    padding: 6px;
-  }
 `;
 
-// Report Detail Components
 const ReportDetailContainer = styled.div`
-  padding: 20px 0;
-
-  /* Added responsive padding */
-  @media (max-width: 768px) {
-    padding: 16px 0;
-  }
-
-  @media (max-width: 640px) {
-    padding: 12px 0;
-  }
+  padding: 10px 0;
 `;
 
 const ReportSection = styled.div`
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid ${(p) => p.theme.border}30;
-
   &:last-child {
     border-bottom: none;
-    margin-bottom: 0;
-  }
-
-  /* Added responsive margin and padding */
-  @media (max-width: 768px) {
-    margin-bottom: 20px;
-    padding-bottom: 14px;
-  }
-
-  @media (max-width: 640px) {
-    margin-bottom: 16px;
-    padding-bottom: 12px;
   }
 `;
 
 const ReportSectionTitle = styled.h3`
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: ${(p) => p.theme.primary};
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-
-  /* Added responsive font sizing */
-  @media (max-width: 768px) {
-    font-size: 1.1rem;
-    gap: 8px;
-  }
-
-  @media (max-width: 640px) {
-    font-size: 1rem;
-    gap: 6px;
-    margin: 0 0 12px 0;
-  }
+  gap: 8px;
 `;
 
 const ReportField = styled.div`
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: flex-start;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  /* Added responsive flex direction for mobile */
   @media (max-width: 640px) {
     flex-direction: column;
-    gap: 6px;
-    margin-bottom: 10px;
+    gap: 4px;
   }
 `;
 
@@ -1331,243 +767,106 @@ const ReportLabel = styled.span`
   font-weight: 600;
   color: ${(p) => p.theme.text}80;
   min-width: 120px;
-
-  /* Added responsive sizing for mobile */
-  @media (max-width: 768px) {
-    min-width: 100px;
-    font-size: 14px;
-  }
-
-  @media (max-width: 640px) {
-    min-width: auto;
-    font-size: 13px;
-  }
+  font-size: 14px;
 `;
 
 const ReportValue = styled.span`
   flex: 1;
   color: ${(p) => p.theme.text};
-  line-height: 1.6;
-
-  /* Added responsive font sizing */
-  @media (max-width: 768px) {
-    font-size: 14px;
-  }
-
-  @media (max-width: 640px) {
-    font-size: 13px;
-  }
+  line-height: 1.5;
+  font-size: 14px;
 `;
 
 const ReportTextArea = styled.div`
   background: ${(p) => p.theme.background};
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
   margin-top: 8px;
   border: 1px solid ${(p) => p.theme.border}30;
   white-space: pre-wrap;
-  line-height: 1.6;
-
-  /* Added responsive padding and font sizing */
-  @media (max-width: 768px) {
-    padding: 12px;
-    border-radius: 6px;
-    font-size: 14px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 13px;
-  }
+  line-height: 1.5;
+  font-size: 14px;
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   position: relative;
-
-  /* Added responsive margin for mobile */
-  @media (max-width: 768px) {
-    margin-bottom: 20px;
-  }
-
-  @media (max-width: 640px) {
-    margin-bottom: 16px;
-  }
 `;
-
-// Styled components qismiga qo'shing:
 const FormGroupWrapper = styled.div`
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   position: relative;
-
-  /* Added responsive margin for mobile */
-  @media (max-width: 768px) {
-    margin-bottom: 20px;
-  }
-
-  @media (max-width: 640px) {
-    margin-bottom: 16px;
-  }
 `;
 
-// FormInput ni yangilang:
 const FormInput = styled.input`
   background: none;
   width: 100%;
-  padding: 14px;
-  padding-right: ${(props) => (props.$hasPasswordToggle ? "45px" : "14px")};
-  border: 2px solid ${(p) => p.theme.border}60;
-  border-radius: 10px;
+  padding: 12px;
+  padding-right: ${(props) => (props.$hasPasswordToggle ? "40px" : "12px")};
+  border: 1px solid ${(p) => p.theme.border}80;
+  border-radius: 8px;
   color: ${(p) => p.theme.text};
-  font-size: 15px;
+  color-scheme: ${(p) => p.theme.mode || "light"};
+  font-size: 14px;
   transition: all 0.3s ease;
 
+  &[type="date"] {
+    cursor: pointer;
+    min-height: 44px;
+  }
+  &[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.9;
+  }
   &:focus {
     outline: none;
     border-color: ${(p) => p.theme.primary};
-    box-shadow: 0 4px 20px ${(p) => p.theme.primary}20;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  /* Added responsive padding and font sizing */
-  @media (max-width: 768px) {
-    padding: 12px;
-    padding-right: ${(props) => (props.$hasPasswordToggle ? "40px" : "12px")};
-    font-size: 14px;
-    border-radius: 8px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 10px;
-    padding-right: ${(props) => (props.$hasPasswordToggle ? "36px" : "10px")};
-    font-size: 13px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px;
-    padding-right: ${(props) => (props.$hasPasswordToggle ? "32px" : "8px")};
-    font-size: 12px;
-    border-radius: 6px;
+    box-shadow: 0 0 0 3px ${(p) => p.theme.primary}20;
   }
 `;
 
 const FormLabel = styled.label`
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   font-weight: 600;
   color: ${(p) => p.theme.text}90;
-  font-size: 14px;
-
-  /* Added responsive font sizing and margin */
-  @media (max-width: 768px) {
-    font-size: 13px;
-    margin-bottom: 8px;
-  }
-
-  @media (max-width: 640px) {
-    font-size: 12px;
-    margin-bottom: 6px;
-  }
+  font-size: 13px;
 `;
 
 const FormSelect = styled.select`
-  background: ${(p) => p.theme.inputBorder};
+  background: ${(p) => p.theme.inputBorder || "transparent"};
   width: 100%;
-  padding: 14px;
-  border: 2px solid ${(p) => p.theme.border}60;
-  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid ${(p) => p.theme.border}80;
+  border-radius: 8px;
   color: ${(p) => p.theme.text};
-  font-size: 15px;
-  transition: all 0.3s ease;
+  font-size: 14px;
   appearance: none;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 14px center;
+  background-position: right 12px center;
   background-size: 16px;
-  padding-right: 40px;
-
+  padding-right: 36px;
   &:focus {
     outline: none;
     border-color: ${(p) => p.theme.primary};
-    box-shadow: 0 4px 20px ${(p) => p.theme.primary}20;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  /* Added responsive padding and font sizing */
-  @media (max-width: 768px) {
-    padding: 12px;
-    padding-right: 36px;
-    font-size: 14px;
-    border-radius: 8px;
-    background-position: right 12px center;
-    background-size: 14px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 10px;
-    padding-right: 32px;
-    font-size: 13px;
-    background-position: right 10px center;
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px;
-    padding-right: 28px;
-    font-size: 12px;
-    border-radius: 6px;
+    box-shadow: 0 0 0 3px ${(p) => p.theme.primary}20;
   }
 `;
 
 const FormTextArea = styled.textarea`
   background: none;
   width: 100%;
-  padding: 14px;
-  border: 2px solid ${(p) => p.theme.border}60;
-  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid ${(p) => p.theme.border}80;
+  border-radius: 8px;
   color: ${(p) => p.theme.text};
-  font-size: 15px;
-  min-height: 120px;
+  font-size: 14px;
+  min-height: 100px;
   resize: vertical;
-  transition: all 0.3s ease;
   &:focus {
     outline: none;
     border-color: ${(p) => p.theme.primary};
-    box-shadow: 0 4px 20px ${(p) => p.theme.primary}20;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  /* Added responsive padding, font sizing, and height */
-  @media (max-width: 768px) {
-    padding: 12px;
-    font-size: 14px;
-    min-height: 100px;
-    border-radius: 8px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 10px;
-    font-size: 13px;
-    min-height: 80px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px;
-    font-size: 12px;
-    min-height: 60px;
-    border-radius: 6px;
+    box-shadow: 0 0 0 3px ${(p) => p.theme.primary}20;
   }
 `;
 
@@ -1582,238 +881,151 @@ const FormActions = styled.div`
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  margin-top: 32px;
-  padding-top: 24px;
+  margin-top: 24px;
+  padding-top: 20px;
   border-top: 1px solid ${(p) => p.theme.border}40;
 
-  /* Added responsive gap, margin, and flex direction */
-  @media (max-width: 768px) {
-    gap: 10px;
-    margin-top: 28px;
-    padding-top: 20px;
-  }
-
   @media (max-width: 640px) {
-    gap: 8px;
-    margin-top: 20px;
-    padding-top: 16px;
-    flex-direction: column;
-  }
-
-  @media (max-width: 480px) {
-    gap: 6px;
-    margin-top: 16px;
-    padding-top: 12px;
+    flex-direction: column-reverse;
   }
 `;
 
 const SecondaryButton = styled.button`
   background: ${(p) => p.theme.cardBg};
   color: ${(p) => p.theme.text};
-  border: 2px solid ${(p) => p.theme.border}60;
-  padding: 12px 24px;
-  border-radius: 10px;
+  border: 1px solid ${(p) => p.theme.border}80;
+  padding: 10px 20px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
-
   &:hover:not(:disabled) {
     background: ${(p) => p.theme.background};
-    border-color: ${(p) => p.theme.primary}60;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  /* Added responsive padding and font sizing */
-  @media (max-width: 768px) {
-    padding: 11px 22px;
-    font-size: 14px;
-    border-radius: 8px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 10px 20px;
-    font-size: 13px;
-    width: 100%;
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px 16px;
-    font-size: 12px;
-    border-radius: 6px;
   }
 `;
 
 const DeleteConfirmModal = styled.div`
   text-align: center;
-  padding: 24px;
-
-  /* Added responsive padding */
-  @media (max-width: 768px) {
-    padding: 20px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 16px;
-  }
+  padding: 10px;
 `;
-
 const DeleteIcon = styled.div`
-  font-size: 64px;
+  font-size: 48px;
   color: #ef4444;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   opacity: 0.8;
-
-  /* Added responsive icon sizing and margin */
-  @media (max-width: 768px) {
-    font-size: 56px;
-    margin-bottom: 20px;
-  }
-
-  @media (max-width: 640px) {
-    font-size: 48px;
-    margin-bottom: 16px;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 40px;
-    margin-bottom: 12px;
-  }
 `;
-
 const DeleteText = styled.p`
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   color: ${(p) => p.theme.text};
-  font-size: 16px;
-  line-height: 1.6;
-
-  /* Added responsive font sizing and margin */
-  @media (max-width: 768px) {
-    margin-bottom: 28px;
-    font-size: 15px;
-  }
-
-  @media (max-width: 640px) {
-    margin-bottom: 24px;
-    font-size: 14px;
-  }
-
-  @media (max-width: 480px) {
-    margin-bottom: 20px;
-    font-size: 13px;
-  }
+  font-size: 15px;
+  line-height: 1.5;
 `;
-
 const DeleteActions = styled.div`
   display: flex;
   gap: 12px;
   justify-content: center;
-
-  /* Added responsive gap and flex wrapping */
-  @media (max-width: 768px) {
-    gap: 10px;
-  }
-
   @media (max-width: 640px) {
-    gap: 8px;
     flex-direction: column;
   }
-
-  @media (max-width: 480px) {
-    gap: 6px;
-  }
 `;
-
 const DeleteButton = styled.button`
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: #ef4444;
   color: white;
   border: none;
-  padding: 14px 32px;
-  border-radius: 10px;
+  padding: 10px 24px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-
+  transition: all 0.2s ease;
   &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(239, 68, 68, 0.4);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  /* Added responsive padding and font sizing */
-  @media (max-width: 768px) {
-    padding: 12px 28px;
-    font-size: 14px;
-    border-radius: 8px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 10px 24px;
-    font-size: 13px;
-    width: 100%;
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px 16px;
-    font-size: 12px;
-    border-radius: 6px;
+    background: #dc2626;
   }
 `;
 
-// Loading skeleton
-const SkeletonRow = styled.div`
+export const MediaRow = styled.div`
+  width: 100%;
   display: flex;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid ${(p) => p.theme.border}20;
-
-  div {
-    background: linear-gradient(
-      90deg,
-      ${(p) => p.theme.border}40,
-      ${(p) => p.theme.border}60,
-      ${(p) => p.theme.border}40
-    );
-    background-size: 200% 100%;
-    animation: ${gradientAnimation} 1.5s ease-in-out infinite;
-    border-radius: 6px;
-    margin-right: 16px;
-
-    &:last-child {
-      margin-right: 0;
-    }
-  }
-
-  /* Added responsive padding and margin */
-  @media (max-width: 768px) {
-    padding: 14px 12px;
-
-    div {
-      margin-right: 12px;
-    }
-  }
-
+  gap: 16px;
+  margin-top: 10px;
   @media (max-width: 640px) {
-    padding: 12px 8px;
-
-    div {
-      margin-right: 8px;
-      border-radius: 4px;
-    }
+    flex-direction: column;
   }
 `;
 
-// Cache keys
+export const MediaBox = styled.div`
+  flex: 1;
+  border: 1px solid ${({ theme }) => theme.border || "#ddd"};
+  border-radius: 8px;
+  padding: 10px;
+`;
+
+export const MediaLabel = styled.div`
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 13px;
+`;
+
+export const ReportImage = styled.img`
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 6px;
+  @media (max-width: 640px) {
+    height: 180px;
+  }
+`;
+
+const DropdownContainer = styled.div`
+  padding: 0 16px;
+  margin-bottom: 16px;
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const DropdownButton = styled.button`
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: ${(p) => p.theme.background};
+  border: 1px solid ${(p) => p.theme.border};
+  border-radius: 10px;
+  color: ${(p) => p.theme.text};
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  svg {
+    transition: transform 0.3s ease;
+    transform: ${(p) => (p.$isOpen ? "rotate(180deg)" : "rotate(0deg)")};
+  }
+`;
+
+const DropdownMenu = styled.div`
+  display: ${(p) => (p.$isOpen ? "flex" : "none")};
+  flex-direction: column;
+  margin-top: 8px;
+  background: ${(p) => p.theme.cardBg};
+  border: 1px solid ${(p) => p.theme.border};
+  border-radius: 10px;
+  overflow: hidden;
+`;
+
+const DropdownItem = styled(Link)`
+  padding: 12px 16px;
+  color: ${(p) => p.theme.text}90;
+  text-decoration: none;
+  font-size: 14px;
+  &:hover,
+  &.active {
+    background: ${(p) => p.theme.primary}12;
+    color: ${(p) => p.theme.primary};
+  }
+`;
+
 const CACHE_KEYS = {
   users: "users_cache",
   faculties: "faculties_cache",
@@ -1824,143 +1036,6 @@ const CACHE_KEYS = {
   reports: "reports_cache",
 };
 
-export const MediaRow = styled.div`
-  width: 100%;
-  display: flex;
-  gap: 16px;
-  margin-top: 10px;
-
-  /* Added responsive gap and flex direction */
-  @media (max-width: 1024px) {
-    gap: 14px;
-  }
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  @media (max-width: 640px) {
-    gap: 10px;
-    margin-top: 8px;
-  }
-
-  @media (max-width: 480px) {
-    gap: 8px;
-    margin-top: 6px;
-  }
-`;
-
-export const MediaBox = styled.div`
-  flex: 1;
-  border: 1px solid ${({ theme }) => theme.border || "#ddd"};
-  border-radius: 8px;
-  padding: 10px;
-
-  /* Added responsive padding and border radius */
-  @media (max-width: 768px) {
-    padding: 8px;
-    border-radius: 6px;
-  }
-
-  @media (max-width: 640px) {
-    padding: 6px;
-  }
-
-  @media (max-width: 480px) {
-    border-radius: 4px;
-  }
-`;
-
-export const MediaLabel = styled.div`
-  font-weight: 600;
-  margin-bottom: 8px;
-  font-size: 14px;
-
-  /* Added responsive font sizing and margin */
-  @media (max-width: 768px) {
-    font-size: 13px;
-    margin-bottom: 6px;
-  }
-
-  @media (max-width: 640px) {
-    font-size: 12px;
-    margin-bottom: 5px;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 11px;
-    margin-bottom: 4px;
-  }
-`;
-
-export const ReportImage = styled.img`
-  width: 100%;
-  height: 300px;
-  object-fit: cover;
-  border-radius: 6px;
-
-  /* Added responsive height and border radius */
-  @media (max-width: 768px) {
-    height: 250px;
-    border-radius: 5px;
-  }
-
-  @media (max-width: 640px) {
-    height: 200px;
-  }
-
-  @media (max-width: 480px) {
-    height: 150px;
-    border-radius: 4px;
-  }
-`;
-
-const NavbarWrapper = styled.nav`
-  width: 100%;
-  padding: 0.5rem 1rem;
-  display: flex;
-  align-items: center;
-  overflow-x: auto; /* horizontal scroll */
-  white-space: nowrap; /* row */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
-
-  &::-webkit-scrollbar {
-    height: 6px;
-  }
-  &::-webkit-scrollbar-thumb {
-    border-radius: 3px;
-  }
-
-  @media (max-width: 640px) {
-    display: none;
-  }
-`;
-
-const NavLink = styled(Link)`
-  display: inline-block;
-  margin-right: 1rem;
-  padding: 0.5rem 1rem;
-  text-decoration: none;
-  font-weight: 500;
-  border-radius: 6px;
-  transition: background 0.2s;
-
-  &:hover {
-    background-color: ${({ theme }) => theme.primary || "#eee"};
-    color: #000;
-    animation: all 0.2s ease-in-out;
-  }
-
-  &.active {
-    background-color: ${({ theme }) => theme.primary || "#ccc"};
-  }
-  @media (max-width: 640px) {
-    display: none;
-  }
-`;
-
 const navItems = [
   { name: "Faculties", path: "/faculties" },
   { name: "Departments", path: "/departments" },
@@ -1970,9 +1045,9 @@ const navItems = [
   { name: "Admin Dashboard", path: "/admin/dashboard" },
 ];
 
-// Main Component
+// --- MAIN COMPONENT ---
+
 export default function AdminDashboard() {
-  // const navigate = useNavigate() // Removed - not needed in this setup
   const [activeMenu, setActiveMenu] = useState("users");
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1992,85 +1067,100 @@ export default function AdminDashboard() {
   const [formData, setFormData] = useState({});
   const [relatedData, setRelatedData] = useState({});
   const [cacheTimestamp, setCacheTimestamp] = useState({});
-  const [showFilters, setShowFilters] = useState(false); // State for showing filters
   const [selectedReport, setSelectedReport] = useState(null);
   const [showReportDetail, setShowReportDetail] = useState(false);
   const [reportDetailLoading, setReportDetailLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState({});
+
+  const [isAcademicDropdownOpen, setIsAcademicDropdownOpen] = useState(false);
+  const { t } = useLanguage();
   const location = useLocation();
 
-  // Mock navigation function
   const navigate = (path) => {
-    console.log("Navigating to:", path);
-    // In a real app, this would navigate using react-router-dom or Next.js router
-    setActiveMenu(path.split("/").pop() || "users"); // Basic update for menu highlighting
+    setActiveMenu(path.split("/").pop() || "users");
   };
-
   function parseWKTPoint(wkt) {
     if (!wkt) return null;
 
-    const point = wkt.split("POINT")[1];
-    if (!point) return null;
+    // GeoJSON obyekt
+    if (typeof wkt === "object") {
+      if (
+        wkt.type === "Point" &&
+        Array.isArray(wkt.coordinates) &&
+        wkt.coordinates.length >= 2
+      ) {
+        const lng = Number(wkt.coordinates[0]);
+        const lat = Number(wkt.coordinates[1]);
+        return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null;
+      }
+      if (Array.isArray(wkt.coordinates) && wkt.coordinates.length >= 2) {
+        const lng = Number(wkt.coordinates[0]);
+        const lat = Number(wkt.coordinates[1]);
+        return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null;
+      }
+      return null;
+    }
 
-    const [lng, lat] = point.replace(/[()]/g, "").trim().split(" ").map(Number);
+    // WKT matn
+    if (typeof wkt === "string") {
+      const match = wkt.match(
+        /POINT\s*\(\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\)/i,
+      );
+      if (!match) return null;
+      return [Number(match[2]), Number(match[1])];
+    }
 
-    return [lat, lng]; // Leaflet uchun
+    return null;
   }
   const togglePasswordVisibility = (fieldName) => {
-    setPasswordVisible((prev) => ({
-      ...prev,
-      [fieldName]: !prev[fieldName],
-    }));
+    setPasswordVisible((prev) => ({ ...prev, [fieldName]: !prev[fieldName] }));
   };
 
-  // Menu Items - Added reports
   const menuItems = [
     {
       id: "users",
-      label: "Foydalanuvchilar",
+      label: t("admin.sections.users"),
       icon: <FaUser />,
       path: "/admin/users",
     },
     {
       id: "faculties",
-      label: "Fakultetlar",
+      label: t("admin.sections.faculties"),
       icon: <FaUniversity />,
       path: "/admin/faculties",
     },
     {
       id: "departments",
-      label: "Kafedralar",
+      label: t("admin.sections.departments"),
       icon: <FaBuilding />,
       path: "/admin/departments",
     },
     {
       id: "directions",
-      label: "Yo'nalishlar",
+      label: t("admin.sections.directions"),
       icon: <FaDirections />,
       path: "/admin/directions",
     },
     {
       id: "groups",
-      label: "Guruhlar",
+      label: t("admin.sections.groups"),
       icon: <FaUsers />,
       path: "/admin/groups",
     },
     {
       id: "practices",
-      label: "Amalyot kunlari",
+      label: t("admin.sections.practices"),
       icon: <FaCalendarAlt />,
       path: "/admin/practices",
     },
     {
       id: "reports",
-      label: "Hisobotlar",
+      label: t("admin.sections.reports"),
       icon: <FaFileAlt />,
       path: "/admin/reports",
     },
   ];
 
-  // Fetch related data for foreign keys
   const fetchRelatedData = useCallback(async () => {
     try {
       const [users, faculties, departments, directions, groups] =
@@ -2081,45 +1171,37 @@ export default function AdminDashboard() {
           api.getDirections().catch(() => []),
           api.getGroups().catch(() => []),
         ]);
-
       setRelatedData({
         users: Array.isArray(users)
-          ? users.reduce((acc, user) => ({ ...acc, [user.id]: user }), {})
+          ? users.reduce((acc, u) => ({ ...acc, [u.id]: u }), {})
           : {},
         faculties: Array.isArray(faculties)
-          ? faculties.reduce(
-              (acc, faculty) => ({ ...acc, [faculty.id]: faculty }),
-              {}
-            )
+          ? faculties.reduce((acc, f) => ({ ...acc, [f.id]: f }), {})
           : {},
         departments: Array.isArray(departments)
-          ? departments.reduce((acc, dept) => ({ ...acc, [dept.id]: dept }), {})
+          ? departments.reduce((acc, d) => ({ ...acc, [d.id]: d }), {})
           : {},
         directions: Array.isArray(directions)
-          ? directions.reduce((acc, dir) => ({ ...acc, [dir.id]: dir }), {})
+          ? directions.reduce((acc, d) => ({ ...acc, [d.id]: d }), {})
           : {},
         groups: Array.isArray(groups)
-          ? groups.reduce((acc, group) => ({ ...acc, [group.id]: group }), {})
+          ? groups.reduce((acc, g) => ({ ...acc, [g.id]: g }), {})
           : {},
       });
     } catch (err) {
-      console.error("Error fetching related data:", err); // Log error for debugging
-      // Optionally set an error message for the user
+      console.error("Error fetching related data:", err);
     }
   }, []);
 
-  // Fetch data with caching
   const fetchData = useCallback(
     async (forceRefresh = false) => {
       setLoading(true);
       setError(null);
-
       const cacheKey = CACHE_KEYS[activeMenu];
       const cached = localStorage.getItem(cacheKey);
       const cachedTimestamp = cacheTimestamp[activeMenu];
       const now = Date.now();
 
-      // Use cache if less than 5 minutes old and not forcing refresh
       if (
         !forceRefresh &&
         cached &&
@@ -2127,13 +1209,11 @@ export default function AdminDashboard() {
         now - cachedTimestamp < 5 * 60 * 1000
       ) {
         try {
-          const parsedData = JSON.parse(cached);
-          setData(Array.isArray(parsedData) ? parsedData : []);
+          setData(JSON.parse(cached) || []);
           setLoading(false);
           return;
         } catch (e) {
-          // Cache invalid, continue with API call
-          console.error("Cache parsing error:", e);
+          console.error(e);
         }
       }
 
@@ -2164,10 +1244,8 @@ export default function AdminDashboard() {
           default:
             response = [];
         }
-
         if (Array.isArray(response)) {
           setData(response);
-          // Cache the response
           localStorage.setItem(cacheKey, JSON.stringify(response));
           setCacheTimestamp((prev) => ({ ...prev, [activeMenu]: now }));
         } else {
@@ -2176,48 +1254,52 @@ export default function AdminDashboard() {
       } catch (err) {
         setError(`Failed to fetch ${activeMenu}: ${err.message}`);
         setData([]);
-        console.error(`Error fetching ${activeMenu}:`, err); // Log error
       } finally {
         setLoading(false);
       }
     },
-    [activeMenu, cacheTimestamp]
+    [activeMenu, cacheTimestamp],
   );
 
-  // Initial fetch and fetch related data
   useEffect(() => {
     fetchData();
-    if (activeMenu !== "reports") {
-      fetchRelatedData();
-    }
+    if (activeMenu !== "reports") fetchRelatedData();
   }, [activeMenu, fetchData, fetchRelatedData]);
 
-  // Fetch report detail
   const fetchReportDetail = useCallback(async (reportId) => {
     setReportDetailLoading(true);
-    setError(null); // Clear previous errors
+    setError(null);
     try {
-      const report = await api.getMyReport(reportId);
-      setSelectedReport(report);
+      setSelectedReport(await api.getMyReport(reportId));
       setShowReportDetail(true);
     } catch (err) {
-      setError(`Failed to fetch report details: ${err.message}`);
-      console.error(`Error fetching report ${reportId}:`, err);
+      setError(`Failed to fetch report: ${err.message}`);
     } finally {
       setReportDetailLoading(false);
     }
   }, []);
 
-  // Handle create/update
+  // Xarita uchun onChange funksiyasini xotiraga olamiz (qayta-qayta yaratilmasligi uchun)
+  const handleLocationChange = useCallback(({ location, address }) => {
+    setFormData((prev) => ({
+      ...prev,
+      location,
+      ...(address ? { address } : {}),
+    }));
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (activeMenu === "practices" && !parseWKTPoint(formData.location)) {
+      setError(t("practice.locationRequired") || "Amaliyot joyini tanlang.");
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
-    setSuccess(null); // Clear previous success messages
+    setSuccess(null);
 
     try {
       if (editingItem) {
-        // Update
         switch (activeMenu) {
           case "users":
             await api.updateUser(editingItem.id, formData);
@@ -2237,13 +1319,9 @@ export default function AdminDashboard() {
           case "practices":
             await api.updatePracticeDay(editingItem.id, formData);
             break;
-          case "reports":
-            // Reports are read-only
-            break;
         }
         setSuccess(`${getFormTemplate()?.title} muvaffaqiyatli yangilandi!`);
       } else {
-        // Create
         switch (activeMenu) {
           case "users":
             await api.createUser(formData);
@@ -2263,42 +1341,30 @@ export default function AdminDashboard() {
           case "practices":
             await api.createPracticeDay(formData);
             break;
-          case "reports":
-            // Reports are read-only
-            break;
         }
         setSuccess(`${getFormTemplate()?.title} muvaffaqiyatli yaratildi!`);
       }
-
       setShowModal(false);
       setFormData({});
       setEditingItem(null);
-      // Clear cache and refetch
       localStorage.removeItem(CACHE_KEYS[activeMenu]);
       fetchData(true);
-
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      const errorMsg = err.message || "Failed to save";
-      setError(errorMsg);
-      console.error("Error submitting form:", err);
+      setError(err.message || "Failed to save");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handle delete
   const handleDelete = async () => {
     if (!deleteItemId) return;
-
     setIsDeleting(true);
     setError(null);
     setSuccess(null);
-
     try {
       switch (activeMenu) {
         case "users":
-          // Assuming an "is_active" flag for soft delete for users
           await api.updateUser(deleteItemId, { is_active: false });
           break;
         case "faculties":
@@ -2316,95 +1382,72 @@ export default function AdminDashboard() {
         case "practices":
           await api.deletePracticeDay(deleteItemId);
           break;
-        case "reports":
-          // Reports are read-only, no delete
-          break;
       }
-
       setSuccess(`${getFormTemplate()?.title} muvaffaqiyatli o'chirildi!`);
       setShowDeleteModal(false);
       setDeleteItemId(null);
-      // Clear cache and refetch
       localStorage.removeItem(CACHE_KEYS[activeMenu]);
       fetchData(true);
-
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err.message || "Failed to delete");
-      console.error("Error deleting item:", err);
     } finally {
       setIsDeleting(false);
     }
   };
 
-  // Handle edit
   const handleEdit = (item) => {
-    if (activeMenu === "reports") return; // Reports are read-only
+    if (activeMenu === "reports") return;
     setEditingItem(item);
-    // Deep clone the item to avoid mutating original data
-    setFormData(JSON.parse(JSON.stringify(item)));
+
+    // Nested obyektlarni tozalash (Edit rejimida select ishlashi uchun)
+    const sanitizedData = { ...item };
+    const foreignKeys = [
+      "student",
+      "group",
+      "attached_teacher",
+      "faculty_id",
+      "department_id",
+      "direction_id",
+      "head_id",
+      "vice_id",
+    ];
+
+    foreignKeys.forEach((key) => {
+      if (
+        sanitizedData[key] &&
+        typeof sanitizedData[key] === "object" &&
+        sanitizedData[key].id
+      ) {
+        sanitizedData[key] = sanitizedData[key].id;
+      }
+    });
+
+    setFormData(JSON.parse(JSON.stringify(sanitizedData)));
     setShowModal(true);
   };
 
-  // Handle add new
   const handleAddNew = () => {
-    if (activeMenu === "reports") return; // Reports are read-only
+    if (activeMenu === "reports") return;
     setEditingItem(null);
     setFormData({});
     setShowModal(true);
   };
+  const handleViewReport = (reportId) => fetchReportDetail(reportId);
 
-  // Handle view report
-  const handleViewReport = (reportId) => {
-    fetchReportDetail(reportId);
-  };
-
-  // Hisobotni yuklab olish
   const handleDownloadReport = (report) => {
-    const reportText = `
-TALABA MA’LUMOTLARI
-===================
-Ismi: ${report.student?.first_name || "Mavjud emas"}
-Familiyasi: ${report.student?.last_name || "Mavjud emas"}
-Guruh: ${report.student?.group || "Mavjud emas"}
-Yo‘nalish: ${report.student?.direction || "Mavjud emas"}
-
-HISOBOT MA’LUMOTLARI
-===================
-Matn:
-${report.text || "Mavjud emas"}
-
-Yaratilgan sana: ${
-      report.created_at
-        ? new Date(report.created_at).toLocaleString()
-        : "Mavjud emas"
-    }
-${
-  report.updated_at
-    ? `Oxirgi yangilanish: ${new Date(report.updated_at).toLocaleString()}`
-    : ""
-}
-`;
-
-    const blob = new Blob([reportText.trim()], {
-      type: "text/plain;charset=utf-8",
-    });
-
+    const text = `TALABA MA'LUMOTLARI\nIsmi: ${report.student?.first_name || "-"}\nFamiliyasi: ${report.student?.last_name || "-"}\nGuruh: ${report.student?.group || "-"}\n\nHISOBOT MA'LUMOTLARI\nMatn:\n${report.text || "-"}\n\nSana: ${report.created_at ? new Date(report.created_at).toLocaleString() : "-"}`;
+    const blob = new Blob([text.trim()], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-
     a.href = url;
-    a.download = `report_${report.id || "unknown"}_${
-      report.student?.last_name || "student"
-    }.txt`;
-
+    a.download = `report_${report.id}_${report.student?.last_name || "student"}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  // Handle input change
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
@@ -2413,7 +1456,6 @@ ${
     }));
   };
 
-  // Get form template
   const getFormTemplate = () => {
     const templates = {
       users: { title: "User" },
@@ -2431,11 +1473,10 @@ ${
     switch (key) {
       case "student":
       case "student_data":
-        if (item.student_data) {
-          const s = item.student_data;
-          return `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim() || "-";
-        }
-        return "-";
+        return item.student_data
+          ? `${item.student_data.first_name ?? ""} ${item.student_data.last_name ?? ""}`.trim() ||
+              "-"
+          : "-";
       case "faculty_id":
         return item.faculty?.name || "-";
       case "department_id":
@@ -2459,82 +1500,72 @@ ${
         return item.group?.group_number || item.group_data?.group_number || "-";
       case "teacher":
       case "teacher_data":
-        if (item.teacher_data) {
-          const t = item.teacher_data;
-          return `${t.first_name ?? ""} ${t.last_name ?? ""}`.trim() || "-";
-        }
-        return "-";
+        return item.teacher_data
+          ? `${item.teacher_data.first_name ?? ""} ${item.teacher_data.last_name ?? ""}`.trim() ||
+              "-"
+          : "-";
       default:
         return "-";
     }
   }
 
-  // Filter and sort
   const filteredData = useMemo(() => {
     if (!searchQuery) return data;
-    const searchLower = searchQuery.toLowerCase();
     return data.filter((item) =>
       Object.entries(item).some(([key, value]) => {
         if (value === null || value === undefined) return false;
-
-        // Handle object values by stringifying them
         if (typeof value === "object") {
           try {
-            return JSON.stringify(value).toLowerCase().includes(searchLower);
+            return JSON.stringify(value)
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase());
           } catch {
-            return false; // Ignore if stringification fails
+            return false;
           }
         }
-
-        // Convert other types to string for searching
-        return String(value).toLowerCase().includes(searchLower);
-      })
+        return String(value).toLowerCase().includes(searchQuery.toLowerCase());
+      }),
     );
   }, [data, searchQuery]);
 
   const sortedData = useMemo(() => {
     return [...filteredData].sort((a, b) => {
-      let aValue = a[sortField];
-      let bValue = b[sortField];
-
-      // Handle object values for sorting - try to get a displayable string
-      if (typeof aValue === "object" && aValue !== null) {
+      let aValue = a[sortField],
+        bValue = b[sortField];
+      if (typeof aValue === "object" && aValue !== null)
         aValue =
           aValue.name ||
-          aValue.title ||
           aValue.group_number ||
           aValue.first_name ||
           aValue.username ||
           aValue.id ||
           "";
-      }
-      if (typeof bValue === "object" && bValue !== null) {
+      if (typeof bValue === "object" && bValue !== null)
         bValue =
           bValue.name ||
-          bValue.title ||
           bValue.group_number ||
           bValue.first_name ||
           bValue.username ||
           bValue.id ||
           "";
-      }
-
-      // Convert to strings for comparison, handling potential nulls
-      const aStr = String(aValue || "").toLowerCase();
-      const bStr = String(bValue || "").toLowerCase();
-
-      if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
-      if (aStr > bStr) return sortDirection === "asc" ? 1 : -1;
-      return 0;
+      const aStr = String(aValue || "").toLowerCase(),
+        bStr = String(bValue || "").toLowerCase();
+      return aStr < bStr
+        ? sortDirection === "asc"
+          ? -1
+          : 1
+        : aStr > bStr
+          ? sortDirection === "asc"
+            ? 1
+            : -1
+          : 0;
     });
   }, [filteredData, sortField, sortDirection]);
 
-  // Pagination
   const totalPages = Math.ceil(sortedData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
 
-  // Get columns based on the active menu
   const getColumns = () => {
     const baseColumns = {
       users: [
@@ -2592,71 +1623,49 @@ ${
         { key: "actions", label: "Amallar", sortable: false },
       ],
     };
-
     return baseColumns[activeMenu] || baseColumns.users;
   };
 
-  // Form templates with foreign key support
   const getFormFields = () => {
     const userOptions = Object.values(relatedData.users || {})
-      .filter((user) => user && user.id && user.first_name) // Ensure user and id exist
-      .map((user) => ({
-        value: user.id,
-        label: `${user.first_name} ${user.last_name}`.trim(), // Trim to avoid leading/trailing spaces
-        role: user.role,
+      .filter((u) => u && u.id && u.first_name)
+      .map((u) => ({
+        value: u.id,
+        label: `${u.first_name} ${u.last_name}`.trim(),
+        role: u.role,
       }));
-
     const teacherOptions = Object.values(relatedData.users || {})
-      .filter((user) => user && user.id && user.role === "teacher")
-      .map((user) => ({
-        value: user.id,
-        label: `${user.first_name} ${user.last_name}`.trim(),
+      .filter((u) => u && u.id && u.role === "teacher")
+      .map((u) => ({
+        value: u.id,
+        label: `${u.first_name} ${u.last_name}`.trim(),
       }));
-
     const studentOptions = Object.values(relatedData.users || {})
-      .filter((user) => user && user.id && user.role === "student")
-      .map((user) => ({
-        value: user.id,
-        label: `${user.first_name} ${user.last_name}`.trim(),
+      .filter((u) => u && u.id && u.role === "student")
+      .map((u) => ({
+        value: u.id,
+        label: `${u.first_name} ${u.last_name}`.trim(),
       }));
-
     const facultyOptions = Object.values(relatedData.faculties || {})
-      .filter((faculty) => faculty && faculty.id)
-      .map((faculty) => ({
-        value: faculty.id,
-        label: faculty.name,
-      }));
-
+      .filter((f) => f && f.id)
+      .map((f) => ({ value: f.id, label: f.name }));
     const departmentOptions = Object.values(relatedData.departments || {})
-      .filter((dept) => dept && dept.id)
-      .map((dept) => ({
-        value: dept.id,
-        label: `${dept.name} (${dept.abbr || "no code"})`.trim(),
+      .filter((d) => d && d.id)
+      .map((d) => ({
+        value: d.id,
+        label: `${d.name} (${d.abbr || "no code"})`.trim(),
       }));
-
     const directionOptions = Object.values(relatedData.directions || {})
-      .filter((dir) => dir && dir.id)
-      .map((dir) => ({
-        value: dir.id,
-        label: dir.name,
-      }));
-
+      .filter((d) => d && d.id)
+      .map((d) => ({ value: d.id, label: d.name }));
     const groupOptions = Object.values(relatedData.groups || {})
-      .filter((group) => group && group.id)
-      .map((group) => ({
-        value: group.id,
-        label: group.group_number,
-      }));
+      .filter((g) => g && g.id)
+      .map((g) => ({ value: g.id, label: g.group_number }));
 
     const baseFields = {
       users: [
         { name: "username", label: "Username", type: "text", required: true },
-        {
-          name: "first_name",
-          label: "Ism",
-          type: "text",
-          required: true,
-        },
+        { name: "first_name", label: "Ism", type: "text", required: true },
         { name: "last_name", label: "Familiya", type: "text", required: true },
         {
           name: "role",
@@ -2673,18 +1682,17 @@ ${
             { value: "student", label: "Talaba" },
           ],
         },
-        // Conditional fields for students
         ...(formData?.role === "student"
           ? [
               {
-                name: "attached_teacher", // Renamed from 'teacher_id' to 'attached_teacher'
+                name: "attached_teacher",
                 label: "O'qituvchi",
                 type: "select",
                 required: true,
                 options: teacherOptions,
               },
               {
-                name: "group", // Renamed from 'group_id' to 'group' for consistency with model
+                name: "group",
                 label: "Guruh",
                 type: "select",
                 required: true,
@@ -2692,15 +1700,14 @@ ${
               },
             ]
           : []),
-        // Password field only for creation, not for editing existing users
         {
           name: "password",
           label: "Password",
           type: "password",
           placeholder: "password",
-          required: true, // Password is required for new users
+          required: true,
         },
-      ].filter(Boolean), // Filter out null/undefined values from the array
+      ].filter(Boolean),
       faculties: [
         { name: "name", label: "Fakultet nomi", type: "text", required: true },
         {
@@ -2714,17 +1721,12 @@ ${
           name: "vice_id",
           label: "Zam dekan",
           type: "select",
-          required: false, // Vice dean might be optional
+          required: false,
           options: userOptions.filter((u) => u.role === "deputy_dean"),
         },
       ],
       departments: [
-        {
-          name: "name",
-          label: "Kafedra nomi",
-          type: "text",
-          required: true,
-        },
+        { name: "name", label: "Kafedra nomi", type: "text", required: true },
         { name: "abbr", label: "Abbreviation", type: "text", required: false },
         {
           name: "faculty_id",
@@ -2769,106 +1771,109 @@ ${
       practices: [
         {
           name: "student",
-          label: "Talaba",
+          label: t("practice.student"),
           type: "select",
           required: true,
           options: studentOptions,
         },
-        { name: "date", label: "Sana", type: "date", required: true },
+        {
+          name: "date",
+          label: t("practice.date"),
+          type: "date",
+          required: true,
+        },
         {
           name: "duty_name",
-          label: "Mas'ul shaxs",
+          label: t("practice.dutyName"),
           type: "text",
           required: true,
         },
         {
           name: "org_name",
-          label: "Tashkilot nomi",
+          label: t("practice.organization"),
           type: "text",
           required: true,
         },
-        { name: "address", label: "Manzil", type: "text", required: true },
+        {
+          name: "address",
+          label: t("practice.address"),
+          type: "text",
+          required: true,
+        },
         {
           name: "location",
-          label: "Lokatsiya",
-          type: "text",
+          label: t("practice.location"),
+          type: "location-picker",
           required: true,
-          placeholder: "POINT(00.0000 00.0000)", // Example format
         },
-        { name: "target", label: "Mo'ljal", type: "textarea", required: true },
+        {
+          name: "target",
+          label: t("practice.target"),
+          type: "textarea",
+          required: true,
+        },
         {
           name: "start_time",
-          label: "Boshlanish vaqti",
+          label: t("practice.startTime"),
           type: "time",
           required: true,
         },
         {
           name: "end_time",
-          label: "Tugash vaqti",
+          label: t("practice.endTime"),
           type: "time",
           required: true,
         },
       ],
-      reports: [], // Reports are read-only, no form fields
+      reports: [],
     };
-
     return baseFields[activeMenu] || baseFields.users;
   };
 
-  // Render status badge for reports
   const renderReportStatusBadge = (status) => {
     if (!status) return <StatusBadge className="inactive">-</StatusBadge>;
-
-    const statusStr = String(status).toLowerCase();
-    let statusClass = "inactive";
-
-    if (statusStr === "success") {
-      statusClass = "approved";
-    } else if (statusStr === "rejected") {
-      statusClass = "rejected";
-    } else if (statusStr === "pending") {
-      statusClass = "submitted";
-    } else if (statusStr === "active") {
-      statusClass = "active";
-    }
-
+    const s = String(status).toLowerCase();
+    let cls = "inactive";
+    if (s === "success") cls = "approved";
+    else if (s === "rejected") cls = "rejected";
+    else if (s === "pending") cls = "submitted";
+    else if (s === "active") cls = "active";
     return (
-      <StatusBadge className={statusClass}>
-        {statusStr.charAt(0).toUpperCase() + statusStr.slice(1)}
+      <StatusBadge className={cls}>
+        {s.charAt(0).toUpperCase() + s.slice(1)}
       </StatusBadge>
     );
   };
 
-  // Render status badge for other entities
   const renderStatusBadge = (status) => {
-    // Handle boolean values from 'is_active'
     const isActive = status === true || status === "true";
     const isInactive = status === false || status === "false";
-
-    if (isActive) {
-      return <StatusBadge className="active">Active</StatusBadge>;
-    } else if (isInactive) {
-      return <StatusBadge className="inactive">Inactive</StatusBadge>;
-    } else if (status === "pending") {
-      return <StatusBadge className="pending">Pending</StatusBadge>;
-    } else if (status === "rejected") {
-      return <StatusBadge className="rejected">Rejected</StatusBadge>;
-    } else if (status === "success") {
-      return <StatusBadge className="approved">Approved</StatusBadge>;
-    } else if (status === "no_permission") {
-      return <StatusBadge className="inactive">No Permission</StatusBadge>;
-    }
-    // Default for undefined or unknown status
+    if (isActive)
+      return <StatusBadge className="active">{t("admin.active")}</StatusBadge>;
+    else if (isInactive)
+      return (
+        <StatusBadge className="inactive">{t("admin.inactive")}</StatusBadge>
+      );
+    else if (status === "pending")
+      return (
+        <StatusBadge className="pending">{t("admin.pending")}</StatusBadge>
+      );
+    else if (status === "rejected")
+      return (
+        <StatusBadge className="rejected">{t("admin.rejected")}</StatusBadge>
+      );
+    else if (status === "success")
+      return (
+        <StatusBadge className="approved">{t("admin.approved")}</StatusBadge>
+      );
     return <StatusBadge className="inactive">-</StatusBadge>;
   };
 
-  // Handle sort
   const handleSort = (field) => {
-    if (field === "actions") return; // Don't sort on actions column
-
-    if (sortField === field) {
+    if (field === "actions") return;
+    if (sortField === field)
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
+    else {
       setSortField(field);
       setSortDirection("asc");
     }
@@ -2881,15 +1886,16 @@ ${
 
   const renderForm = () => {
     const fields = getFormFields();
-
-    if (activeMenu === "reports") {
-      return null; // Reports are read-only, so no form is rendered
-    }
+    if (activeMenu === "reports") return null;
 
     return (
       <form onSubmit={handleSubmit}>
+        {activeMenu === "practices" && error && (
+          <Message className="error">
+            <FaExclamationCircle /> {error}
+          </Message>
+        )}
         {fields.map((field) => {
-          // Password input requires special handling for visibility toggle
           if (field.type === "password") {
             return (
               <FormGroupWrapper key={field.name}>
@@ -2907,7 +1913,7 @@ ${
                     required={field.required}
                     placeholder={field.placeholder}
                     disabled={field.disabled}
-                    $hasPasswordToggle={true} // Pass prop for styling adjustment
+                    $hasPasswordToggle={true}
                   />
                   <PasswordToggle
                     type="button"
@@ -2915,15 +1921,15 @@ ${
                     style={{
                       position: "absolute",
                       right: "12px",
-                      top: "50%", // Center vertically
-                      transform: "translateY(-50%)", // Adjust for vertical centering
+                      top: "50%",
+                      transform: "translateY(-50%)",
                       background: "none",
                       border: "none",
-                      color: "var(--text-secondary)", // Use theme color
+                      color: "var(--text-secondary)",
                       cursor: "pointer",
                       padding: "8px",
                       fontSize: "18px",
-                      zIndex: 1, // Ensure it's above the input
+                      zIndex: 1,
                     }}
                     aria-label="Toggle password visibility"
                   >
@@ -2933,8 +1939,6 @@ ${
               </FormGroupWrapper>
             );
           }
-
-          // Standard form fields (text, select, textarea)
           return (
             <FormGroup key={field.name}>
               <FormLabel htmlFor={field.name}>
@@ -2951,15 +1955,24 @@ ${
                   disabled={
                     field.disabled ||
                     (field.options && field.options.length === 0)
-                  } // Disable if no options
+                  }
                 >
-                  <option value="">{field.label}ni tanlang</option>
+                  <option value="">
+                    {activeMenu === "practices" && field.name === "student"
+                      ? t("practice.chooseStudent")
+                      : `${field.label}ni tanlang`}
+                  </option>
                   {field.options?.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </FormSelect>
+              ) : field.type === "location-picker" ? (
+                <PracticeLocationPicker
+                  value={formData.location || ""}
+                  onChange={handleLocationChange}
+                />
               ) : field.type === "textarea" ? (
                 <FormTextArea
                   id={field.name}
@@ -2967,11 +1980,10 @@ ${
                   value={formData[field.name] || ""}
                   onChange={handleInputChange}
                   required={field.required}
-                  rows="4" // Default rows
+                  rows="3"
                   disabled={field.disabled}
                 />
               ) : (
-                // Text, date, time inputs
                 <FormInput
                   id={field.name}
                   name={field.name}
@@ -2981,20 +1993,19 @@ ${
                   placeholder={field.placeholder}
                   disabled={field.disabled}
                   value={formData[field.name] || ""}
-                  $hasPasswordToggle={false} // Not a password field
+                  $hasPasswordToggle={false}
                 />
               )}
             </FormGroup>
           );
         })}
-
         <FormActions>
           <SecondaryButton
             type="button"
             onClick={() => setShowModal(false)}
             disabled={isSubmitting}
           >
-            Bekor qilish
+            {t("admin.cancel")}
           </SecondaryButton>
           <ActionButton type="submit" disabled={isSubmitting}>
             {isSubmitting ? (
@@ -3005,12 +2016,12 @@ ${
                     marginRight: "8px",
                   }}
                 />
-                Saqlanmoqda...
+                {t("admin.saving")}
               </>
             ) : (
               <>
                 <FaSave />
-                {editingItem ? "Yangilash" : "Yaratish"}
+                {editingItem ? t("admin.update") : t("admin.create")}
               </>
             )}
           </ActionButton>
@@ -3019,76 +2030,70 @@ ${
     );
   };
 
-  // Render report detail
   const renderReportDetail = () => {
     if (!selectedReport) return null;
     const position = parseWKTPoint(selectedReport.location);
-
     return (
       <ReportDetailContainer>
         <ReportSection>
           <ReportSectionTitle>
-            <FaUser /> Talaba ma'lumotlari
+            <FaUser /> {t("admin.studentInfo")}
           </ReportSectionTitle>
           <ReportField>
-            <ReportLabel>Talaba:</ReportLabel>
+            <ReportLabel>{t("admin.student")}</ReportLabel>
             <ReportValue>
               {selectedReport.student?.first_name || ""}{" "}
               {selectedReport.student?.last_name || ""}
             </ReportValue>
           </ReportField>
           <ReportField>
-            <ReportLabel>Guruh:</ReportLabel>
+            <ReportLabel>{t("admin.group")}</ReportLabel>
             <ReportValue>{selectedReport.student?.group || "N/A"}</ReportValue>
           </ReportField>
           <ReportField>
-            <ReportLabel>Yo'nalish:</ReportLabel>
+            <ReportLabel>{t("admin.direction")}</ReportLabel>
             <ReportValue>
               {selectedReport.student?.direction || "N/A"}
             </ReportValue>
           </ReportField>
         </ReportSection>
-
         <ReportSection>
           <ReportSectionTitle>
-            <FaFileAlt /> Hisobot tafsilotlari
+            <FaFileAlt /> {t("admin.reportDetails")}
           </ReportSectionTitle>
           <ReportField>
-            <ReportLabel>Matn:</ReportLabel>
+            <ReportLabel>{t("admin.text")}</ReportLabel>
             <ReportValue>{selectedReport.text || "N/A"}</ReportValue>
           </ReportField>
           <ReportField>
-            <ReportLabel>Yaratilgan vaqt:</ReportLabel>
+            <ReportLabel>{t("admin.createdAt")}</ReportLabel>
             <ReportValue>
               {new Date(selectedReport.created_at).toLocaleString()}
             </ReportValue>
           </ReportField>
           {selectedReport.updated_at && (
             <ReportField>
-              <ReportLabel>Oxirgi yangilangan :</ReportLabel>
+              <ReportLabel>{t("admin.updatedAt")}</ReportLabel>
               <ReportValue>
                 {new Date(selectedReport.updated_at).toLocaleString()}
               </ReportValue>
             </ReportField>
           )}
           <MediaRow>
-            {/* IMAGE */}
             <MediaBox>
-              <MediaLabel>Rasm:</MediaLabel>
+              <MediaLabel>{t("admin.image")}</MediaLabel>
               {selectedReport.image ? (
-                <ReportImage src={selectedReport.image} alt="Report Image" />
+                <ReportImage src={selectedReport.image} alt="Report" />
               ) : (
                 <ReportValue>N/A</ReportValue>
               )}
             </MediaBox>
-
-            {/* MAP PLACEHOLDER */}
             <MediaBox>
-              <MediaLabel>Lokatsiya:</MediaLabel>
+              <MediaLabel>{t("admin.location")}</MediaLabel>
               {position ? (
                 <div
                   style={{
-                    height: "300px",
+                    height: "200px",
                     width: "100%",
                     borderRadius: "6px",
                     background: "#f0f0f0",
@@ -3107,20 +2112,18 @@ ${
             </MediaBox>
           </MediaRow>
         </ReportSection>
-
         {selectedReport.content && (
           <ReportSection>
             <ReportSectionTitle>
-              <FaEdit /> Hisobot mazmuni
+              <FaEdit /> {t("admin.content")}
             </ReportSectionTitle>
             <ReportTextArea>{selectedReport.content}</ReportTextArea>
           </ReportSection>
         )}
-
         {selectedReport.additional_info && (
           <ReportSection>
             <ReportSectionTitle>
-              <FaInfoCircle /> Qo'shimcha ma'lumot
+              <FaInfoCircle /> {t("admin.additionalInfo")}
             </ReportSectionTitle>
             <ReportTextArea>{selectedReport.additional_info}</ReportTextArea>
           </ReportSection>
@@ -3131,7 +2134,6 @@ ${
 
   return (
     <DashboardContainer>
-      {/* Sidebar */}
       <Sidebar>
         <SidebarHeader>
           <AppTitle>
@@ -3139,17 +2141,27 @@ ${
             <span>Admin</span>
           </AppTitle>
         </SidebarHeader>
-        <NavbarWrapper>
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={location.pathname === item.path ? "active" : ""}
-            >
-              {item.name}
-            </NavLink>
-          ))}
-        </NavbarWrapper>
+        <DropdownContainer>
+          <DropdownButton
+            $isOpen={isAcademicDropdownOpen}
+            onClick={() => setIsAcademicDropdownOpen(!isAcademicDropdownOpen)}
+          >
+            <span>{t("admin.academicSections")}</span>
+            <FaChevronDown />
+          </DropdownButton>
+          <DropdownMenu $isOpen={isAcademicDropdownOpen}>
+            {navItems.map((item) => (
+              <DropdownItem
+                key={item.path}
+                to={item.path}
+                className={location.pathname === item.path ? "active" : ""}
+                onClick={() => setIsAcademicDropdownOpen(false)}
+              >
+                {item.name}
+              </DropdownItem>
+            ))}
+          </DropdownMenu>
+        </DropdownContainer>
         <SidebarMenu>
           {menuItems.map((item) => (
             <MenuItem key={item.id}>
@@ -3157,12 +2169,10 @@ ${
                 className={activeMenu === item.id ? "active" : ""}
                 onClick={() => {
                   setActiveMenu(item.id);
-                  setCurrentPage(1); // Reset to first page on menu change
-                  setSearchQuery(""); // Clear search on menu change
-                  setShowFilters(false); // Hide filters
-                  setSelectedReport(null); // Clear selected report
-                  setShowReportDetail(false); // Hide report detail
-                  // Navigate using mock function
+                  setCurrentPage(1);
+                  setSearchQuery("");
+                  setSelectedReport(null);
+                  setShowReportDetail(false);
                   navigate(item.path);
                 }}
               >
@@ -3174,66 +2184,53 @@ ${
         </SidebarMenu>
       </Sidebar>
 
-      {/* Main Content */}
       <MainContent>
         <ContentHeader>
           <PageTitle>
             {menuItems.find((item) => item.id === activeMenu)?.label}
           </PageTitle>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            {/* Refresh Button */}
+
+          <ButtonsContainer>
             <RefreshButton onClick={() => fetchData(true)} disabled={loading}>
-              <FaSync />
-              Yangilash
+              <FaSync /> {t("admin.refresh")}
             </RefreshButton>
-            {/* Add New Button - only visible for non-report sections */}
             {activeMenu !== "reports" && (
               <ActionButton onClick={handleAddNew}>
-                <FaPlus />
-                Yangi qo'shish
+                <FaPlus /> {t("admin.addNew")}
               </ActionButton>
             )}
-            {/* Filter Button - Toggle visibility of filters */}
-          </div>
+          </ButtonsContainer>
         </ContentHeader>
 
-        {/* Messages: Error, Success */}
         {error && (
           <Message className="error">
-            <FaExclamationCircle />
-            {error}
+            <FaExclamationCircle /> {error}
           </Message>
         )}
-
         {success && (
           <Message className="success">
-            <FaCheckCircle />
-            {success}
+            <FaCheckCircle /> {success}
           </Message>
         )}
 
-        {/* Toolbar: Search */}
         <Toolbar>
           <SearchBox>
             <FaSearch size={16} />
             <SearchInput
-              placeholder="Qidirish..."
+              placeholder={t("admin.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </SearchBox>
         </Toolbar>
 
-        {/* Data Table */}
         <DataTable>
           {loading ? (
-            // Loading Spinner while data is being fetched
             <LoadingSpinner>
               <FaSpinner size={32} />
-              <div style={{ marginTop: "16px" }}>Yuklanmoqda...</div>
+              <div style={{ marginTop: "16px" }}>{t("admin.loading")}</div>
             </LoadingSpinner>
           ) : (
-            // Render table if data is loaded
             <>
               <Table>
                 <TableHeader>
@@ -3253,7 +2250,7 @@ ${
                             gap: "8px",
                           }}
                         >
-                          {column.label}
+                          {column.label}{" "}
                           {column.sortable && getSortIcon(column.key)}
                         </div>
                       </TableHeaderCell>
@@ -3262,45 +2259,41 @@ ${
                 </TableHeader>
                 <tbody>
                   {paginatedData.length > 0 ? (
-                    // Render rows for paginated data
                     paginatedData.map((item) => (
                       <TableRow key={item.id || Math.random()}>
                         {getColumns().map((column) => (
                           <TableCell key={column.key}>
                             {column.key === "actions" ? (
-                              // Action buttons column
                               <ActionCell>
                                 {activeMenu === "reports" ? (
-                                  // Actions for Reports
                                   <>
                                     <IconButton
                                       className="view"
-                                      title="View Details"
+                                      title={t("admin.viewDetails")}
                                       onClick={() => handleViewReport(item.id)}
                                     >
                                       <FaEye />
                                     </IconButton>
                                     <IconButton
                                       className="download"
-                                      title="Download Report"
+                                      title={t("admin.downloadReport")}
                                       onClick={() => handleDownloadReport(item)}
                                     >
                                       <FaDownload />
                                     </IconButton>
                                   </>
                                 ) : (
-                                  // Actions for other modules (Edit, Delete)
                                   <>
                                     <IconButton
                                       className="edit"
-                                      title="Edit"
+                                      title={t("admin.edit")}
                                       onClick={() => handleEdit(item)}
                                     >
                                       <FaEdit />
                                     </IconButton>
                                     <IconButton
                                       className="delete"
-                                      title="Delete"
+                                      title={t("admin.delete")}
                                       onClick={() => {
                                         setDeleteItemId(item.id);
                                         setShowDeleteModal(true);
@@ -3313,21 +2306,16 @@ ${
                               </ActionCell>
                             ) : column.key === "is_active" ||
                               column.key === "status" ? (
-                              // Status badge column
                               activeMenu === "reports" ? (
-                                renderReportStatusBadge(item[column.key]) // Specific for reports
+                                renderReportStatusBadge(item[column.key])
                               ) : (
                                 renderStatusBadge(item[column.key])
-                              ) // General status badge
+                              )
                             ) : column.key === "created_at" ? (
-                              // Format date for created_at
                               new Date(item[column.key]).toLocaleDateString()
                             ) : (
-                              // Render other cell data
                               (() => {
                                 const value = item[column.key];
-
-                                // Special handling for foreign key displays
                                 if (
                                   [
                                     "faculty_id",
@@ -3336,37 +2324,27 @@ ${
                                     "head_id",
                                     "vice_id",
                                     "attached_teacher",
-                                    "student_id", // Use the correct key for student ID in practices
-                                    "group_id", // Use the correct key for group ID in practices
+                                    "student_id",
+                                    "group_id",
                                   ].includes(column.key)
-                                ) {
-                                  // Use the getForeignKeyDisplay helper
+                                )
                                   return getForeignKeyDisplay(item, column.key);
-                                }
-
-                                // Handle object values more gracefully
                                 if (
                                   typeof value === "object" &&
                                   value !== null
                                 ) {
                                   try {
-                                    // Prioritize common display fields
                                     if (value.name) return value.name;
                                     if (value.group_number)
                                       return value.group_number;
-                                    if (value.first_name && value.last_name) {
+                                    if (value.first_name && value.last_name)
                                       return `${value.first_name} ${value.last_name}`.trim();
-                                    }
                                     if (value.username) return value.username;
-                                    if (value.title) return value.title;
-                                    // Fallback to stringifying if no specific field is found
                                     return JSON.stringify(value);
                                   } catch {
-                                    return "-"; // Return hyphen if stringification fails
+                                    return "-";
                                   }
                                 }
-
-                                // Display string value or hyphen if null/undefined
                                 return value !== undefined && value !== null
                                   ? String(value)
                                   : "-";
@@ -3377,14 +2355,13 @@ ${
                       </TableRow>
                     ))
                   ) : (
-                    // Empty state if no data found
                     <TableRow>
                       <TableCell colSpan={getColumns().length}>
                         <EmptyState>
                           <FaExclamationCircle />
                           <div
                             style={{
-                              fontSize: "18px",
+                              fontSize: "16px",
                               fontWeight: "600",
                               marginBottom: "8px",
                             }}
@@ -3404,8 +2381,7 @@ ${
                 </tbody>
               </Table>
 
-              {/* Pagination Controls */}
-              {sortedData.length > itemsPerPage && ( // Only show pagination if needed
+              {sortedData.length > itemsPerPage && (
                 <Pagination>
                   <PaginationInfo>
                     {startIndex + 1}-
@@ -3419,19 +2395,13 @@ ${
                     >
                       Oldingi
                     </PageButton>
-                    {/* Dynamic page number rendering */}
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1; // Show all pages if less than or equal to 5
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1; // Show first few pages
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i; // Show last few pages
-                      } else {
-                        pageNum = currentPage - 2 + i; // Show pages around current page
-                      }
-
+                      if (totalPages <= 5) pageNum = i + 1;
+                      else if (currentPage <= 3) pageNum = i + 1;
+                      else if (currentPage >= totalPages - 2)
+                        pageNum = totalPages - 4 + i;
+                      else pageNum = currentPage - 2 + i;
                       return (
                         <PageButton
                           key={pageNum}
@@ -3446,7 +2416,7 @@ ${
                       disabled={currentPage === totalPages}
                       onClick={() => setCurrentPage(currentPage + 1)}
                     >
-                      Keyingi
+                      {t("admin.next")}
                     </PageButton>
                   </PaginationControls>
                 </Pagination>
@@ -3456,28 +2426,27 @@ ${
         </DataTable>
       </MainContent>
 
-      {/* Create/Edit Modal */}
-      {showModal &&
-        activeMenu !== "reports" && ( // Don't show modal for read-only reports
-          <ModalOverlay onClick={() => !isSubmitting && setShowModal(false)}>
-            <ModalContent onClick={(e) => e.stopPropagation()}>
-              <ModalHeader>
-                <ModalTitle>
-                  {editingItem ? "Edit" : "Add New"} {getFormTemplate()?.title}
-                </ModalTitle>
-                <ModalCloseButton
-                  onClick={() => !isSubmitting && setShowModal(false)}
-                  disabled={isSubmitting}
-                >
-                  <FaTimes />
-                </ModalCloseButton>
-              </ModalHeader>
-              {renderForm()}
-            </ModalContent>
-          </ModalOverlay>
-        )}
+      {showModal && activeMenu !== "reports" && (
+        <ModalOverlay onClick={() => !isSubmitting && setShowModal(false)}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>
+                {activeMenu === "practices"
+                  ? `${editingItem ? t("practice.edit") : t("practice.addNew")}`
+                  : `${editingItem ? t("admin.edit") : t("admin.addNew")} ${getFormTemplate()?.title}`}
+              </ModalTitle>
+              <ModalCloseButton
+                onClick={() => !isSubmitting && setShowModal(false)}
+                disabled={isSubmitting}
+              >
+                <FaTimes />
+              </ModalCloseButton>
+            </ModalHeader>
+            {renderForm()}
+          </ModalContent>
+        </ModalOverlay>
+      )}
 
-      {/* Report Detail Modal */}
       {showReportDetail && (
         <ModalOverlay
           onClick={() => !reportDetailLoading && setShowReportDetail(false)}
@@ -3488,7 +2457,7 @@ ${
           >
             <ModalHeader>
               <ModalTitle>
-                <FaFileAlt /> Hisobot tafsilotlari
+                <FaFileAlt /> {t("admin.reportDetails")}
               </ModalTitle>
               <ModalCloseButton
                 onClick={() => setShowReportDetail(false)}
@@ -3500,9 +2469,7 @@ ${
             {reportDetailLoading ? (
               <LoadingSpinner>
                 <FaSpinner size={32} />
-                <div style={{ marginTop: "16px" }}>
-                  Hisobot tafsilotlari yuklanmoqda...
-                </div>
+                <div style={{ marginTop: "16px" }}>Yuklanmoqda...</div>
               </LoadingSpinner>
             ) : (
               renderReportDetail()
@@ -3511,49 +2478,45 @@ ${
         </ModalOverlay>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal &&
-        activeMenu !== "reports" && ( // Don't show for reports
-          <ModalOverlay
-            onClick={() => !isDeleting && setShowDeleteModal(false)}
-          >
-            <ModalContent onClick={(e) => e.stopPropagation()}>
-              <DeleteConfirmModal>
-                <DeleteIcon>
-                  <FaExclamationCircle />
-                </DeleteIcon>
-                <DeleteText>
-                  Haqiqatan ham buni oʻchirib tashlamoqchimisiz{" "}
-                  {getFormTemplate()?.title.toLowerCase()}? Bu amalni ortga
-                  qaytarib bo‘lmaydi.
-                </DeleteText>
-                <DeleteActions>
-                  <SecondaryButton
-                    onClick={() => !isDeleting && setShowDeleteModal(false)}
-                    disabled={isDeleting}
-                  >
-                    Bekor qilish
-                  </SecondaryButton>
-                  <DeleteButton onClick={handleDelete} disabled={isDeleting}>
-                    {isDeleting ? (
-                      <>
-                        <FaSpinner
-                          style={{
-                            animation: "spin 1s linear infinite",
-                            marginRight: "8px",
-                          }}
-                        />
-                        Oʻchirilmoqda...
-                      </>
-                    ) : (
-                      "Oʻchirish"
-                    )}
-                  </DeleteButton>
-                </DeleteActions>
-              </DeleteConfirmModal>
-            </ModalContent>
-          </ModalOverlay>
-        )}
+      {showDeleteModal && activeMenu !== "reports" && (
+        <ModalOverlay onClick={() => !isDeleting && setShowDeleteModal(false)}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <DeleteConfirmModal>
+              <DeleteIcon>
+                <FaExclamationCircle />
+              </DeleteIcon>
+              <DeleteText>
+                Haqiqatan ham buni oʻchirib tashlamoqchimisiz{" "}
+                {getFormTemplate()?.title.toLowerCase()}? Bu amalni ortga
+                qaytarib bo‘lmaydi.
+              </DeleteText>
+              <DeleteActions>
+                <SecondaryButton
+                  onClick={() => !isDeleting && setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                >
+                  Bekor qilish
+                </SecondaryButton>
+                <DeleteButton onClick={handleDelete} disabled={isDeleting}>
+                  {isDeleting ? (
+                    <>
+                      <FaSpinner
+                        style={{
+                          animation: "spin 1s linear infinite",
+                          marginRight: "8px",
+                        }}
+                      />
+                      Oʻchirilmoqda...
+                    </>
+                  ) : (
+                    "Oʻchirish"
+                  )}
+                </DeleteButton>
+              </DeleteActions>
+            </DeleteConfirmModal>
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </DashboardContainer>
   );
 }

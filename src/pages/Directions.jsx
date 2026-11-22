@@ -4,6 +4,7 @@ import { lightTheme, darkTheme } from "../styles/theme.js";
 import { FaBuilding } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
@@ -217,6 +218,7 @@ export default function Directions({ isDark = false, onThemeChange }) {
 
   const theme = isDark ? darkTheme : lightTheme;
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -259,9 +261,9 @@ export default function Directions({ isDark = false, onThemeChange }) {
   }, [departmentId]);
 
   // render
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
-  if (!data) return <div className="p-4">No data found</div>;
+  if (loading) return <div className="p-4">{t("catalog.loading")}</div>;
+  if (error) return <div className="p-4 text-red-600">{t("catalog.error")} {error}</div>;
+  if (!data) return <div className="p-4">{t("catalog.noData")}</div>;
 
   const directions = departmentId ? data?.directions || [] : data || [];
   const departmentName =
@@ -275,8 +277,7 @@ export default function Directions({ isDark = false, onThemeChange }) {
       <DirectionsSection>
         <HeaderRow>
           <SectionTitle>
-            {departmentId ? `${data.name}` : departmentName} kafedra
-            yo‘nalishlari
+            {departmentId ? `${data.name}` : departmentName} {t("catalog.departmentDirections")}
           </SectionTitle>
           <div
             style={{
@@ -286,13 +287,13 @@ export default function Directions({ isDark = false, onThemeChange }) {
               height: "100%",
             }}
           >
-            <Counter>{directions.length} ta yo'nalish</Counter>
+            <Counter>{directions.length} {t("catalog.directionsCount")}</Counter>
           </div>
         </HeaderRow>
 
         {directions.length === 0 && (
           <div style={{ padding: "20px", color: theme.text }}>
-            Hozircha yo'nalishlar mavjud emas.
+             {t("catalog.noDirections")}
           </div>
         )}
         {directions.map((dir) => (
@@ -306,7 +307,7 @@ export default function Directions({ isDark = false, onThemeChange }) {
               </CellIcon>
 
               <CellContent>
-                <CellLabel>Yo'nalish</CellLabel>
+                <CellLabel>{t("catalog.directions")}</CellLabel>
                 <CellValue>{dir.name}</CellValue>{" "}
                 <CellLabel>{dir.abbr}</CellLabel>
               </CellContent>

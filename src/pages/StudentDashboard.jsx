@@ -8,6 +8,7 @@ import { MdAccessTime } from "react-icons/md";
 import { FaEyeSlash } from "react-icons/fa6";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../services/api.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
@@ -430,6 +431,7 @@ const LoadingSpinner = styled.div`
 export default function StudentDashboard({ isDark = false }) {
   const theme = isDark ? darkTheme : lightTheme;
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -523,19 +525,7 @@ export default function StudentDashboard({ isDark = false }) {
     }
   };
 
-  const getRoleDisplay = (role) => {
-    const roleMap = {
-      admin: "Admin",
-      teacher: "Teacher",
-      student: "Student",
-      rector: "Rector",
-      vice_rector: "Vice Rector",
-      dean: "Dean",
-      deputy_dean: "Deputy Dean",
-      head_of_department: "Head of Department",
-    };
-    return roleMap[role] || role;
-  };
+  const getRoleDisplay = (role) => t(`role.${role}`) || role;
 
   // Get practice days based on user role
   const getPracticeDays = () => {
@@ -558,7 +548,7 @@ export default function StudentDashboard({ isDark = false }) {
       <DashboardContainer>
         <LoadingSpinner>
           <FaUserGraduate />
-          <p>Boshqaruv paneli yuklanmoqda...</p>
+          <p>{t("dashboard.loading")}</p>
         </LoadingSpinner>
       </DashboardContainer>
     );
@@ -569,7 +559,7 @@ export default function StudentDashboard({ isDark = false }) {
       <DashboardContainer>
         <EmptyState>
           <FaEyeSlash />
-          <p>Boshqaruv panelini yuklashda xatolik yuz berdi</p>
+          <p>{t("dashboard.loadError")}</p>
           <p style={{ fontSize: "14px", opacity: 0.7 }}>{error}</p>
         </EmptyState>
       </DashboardContainer>
@@ -581,9 +571,9 @@ export default function StudentDashboard({ isDark = false }) {
       <DashboardContainer>
         <EmptyState>
           <FaUserGraduate />
-          <p>Hech qanday foydalanuvchi maʼlumotlari topilmadi</p>
+          <p>{t("dashboard.noUser")}</p>
           <p style={{ fontSize: "14px", opacity: 0.7 }}>
-            Iltimos, asboblar paneliga kirish uchun tizimga kiring
+            {t("dashboard.loginPrompt")}
           </p>
         </EmptyState>
       </DashboardContainer>
@@ -608,20 +598,20 @@ export default function StudentDashboard({ isDark = false }) {
             <UserInfoRow>
               {userData.role === "student" && userData.group && (
                 <UserInfoText>
-                  Guruh: {userData.group.group_number}
+                  {t("dashboard.group")} {userData.group.group_number}
                 </UserInfoText>
               )}
 
               {userData.role === "student" && userData.attached_teacher && (
                 <UserInfoText>
-                  O'qituvchi: {userData.attached_teacher.first_name}{" "}
+                  {t("dashboard.teacher")} {userData.attached_teacher.first_name}{" "}
                   {userData.attached_teacher.last_name}
                 </UserInfoText>
               )}
             </UserInfoRow>
           </div>
           <Count>
-            <Counter>{practiceDays.length} amaliyot kunlari</Counter>
+            <Counter>{practiceDays.length} {t("dashboard.practiceDaysCount")}</Counter>
           </Count>
         </HeaderRow>
 
@@ -629,18 +619,17 @@ export default function StudentDashboard({ isDark = false }) {
           userData.role === "student" ? (
             <EmptyState>
               <FaUserGraduate />
-              <p>Amaliyot kunlari hali belgilanmagan</p>
+              <p>{t("dashboard.noAssignedTitle")}</p>
               <p style={{ fontSize: "14px", opacity: 0.7 }}>
-                O'qituvchingiz sizga tez orada amaliyot kunlarini tayinlaydi
+                {t("dashboard.teacherWillAssign")}
               </p>
             </EmptyState>
           ) : (
             <EmptyState>
               <FaUserGraduate />
-              <p>Amaliyot kunlari mavjud emas</p>
+              <p>{t("dashboard.noPracticeDays")}</p>
               <p style={{ fontSize: "14px", opacity: 0.7 }}>
-                {getRoleDisplay(userData.role)}ga tayinlangan amaliyot kunlari
-                yo'q
+                {getRoleDisplay(userData.role)} {t("dashboard.noPracticeDaysFor")}
               </p>
             </EmptyState>
           )
@@ -665,7 +654,7 @@ export default function StudentDashboard({ isDark = false }) {
                 <CellContent>
                   <CellIconWrapper>
                     <PiStudentBold />
-                    <CellLabel>Mas'ul shaxs</CellLabel>
+                    <CellLabel>{t("dashboard.supervisor")}</CellLabel>
                   </CellIconWrapper>
                   <CellValue>{prc.duty_name}</CellValue>
                 </CellContent>
@@ -674,10 +663,10 @@ export default function StudentDashboard({ isDark = false }) {
                 <CellContent>
                   <CellIconWrapper>
                     <FaLocationDot />
-                    <CellLabel>Mo'ljal</CellLabel>
+                    <CellLabel>{t("dashboard.landmark")}</CellLabel>
                   </CellIconWrapper>
                   <CellValue>
-                    {prc.address || prc.location || "Not specified"}
+                    {prc.address || prc.location || t("dashboard.notSpecified")}
                   </CellValue>
                 </CellContent>
               </TableCell>
@@ -685,7 +674,7 @@ export default function StudentDashboard({ isDark = false }) {
                 <CellContent>
                   <CellIconWrapper>
                     <MdAccessTime />
-                    <CellLabel>Boshlanish vaqti</CellLabel>
+                    <CellLabel>{t("dashboard.startTime")}</CellLabel>
                   </CellIconWrapper>
                   <CellValue>{prc.start_time}</CellValue>
                 </CellContent>
@@ -694,7 +683,7 @@ export default function StudentDashboard({ isDark = false }) {
                 <CellContent>
                   <CellIconWrapper>
                     <MdAccessTime />
-                    <CellLabel>Tugash vaqti</CellLabel>
+                    <CellLabel>{t("dashboard.endTime")}</CellLabel>
                   </CellIconWrapper>
                   <CellValue>{prc.end_time}</CellValue>
                 </CellContent>
@@ -710,9 +699,9 @@ export default function StudentDashboard({ isDark = false }) {
                   <CellContent>
                     <CellIconWrapper>
                       <FaLocationDot />
-                      <CellLabel>Tashkilot</CellLabel>
+                      <CellLabel>{t("dashboard.organization")}</CellLabel>
                     </CellIconWrapper>
-                    <CellValue>{prc.org_name || "Not specified"}</CellValue>
+                    <CellValue>{prc.org_name || t("dashboard.notSpecified")}</CellValue>
                   </CellContent>
                 </MobileTableCell>
                 <ScoreBadge2

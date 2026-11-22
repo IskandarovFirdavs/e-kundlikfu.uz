@@ -7,6 +7,7 @@ import icon from "../../public/seticon.png";
 import darkicon from "../../public/Group.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext"; // AuthContext'ni import qilamiz
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 // --- WRAPPER ---
 const Wrapper = styled.div`
@@ -57,7 +58,8 @@ const Card = styled.div`
 const CardHeader = styled.div`
   width: 100%;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: right;
 `;
 
 // --- LOGO BLOCK ---
@@ -160,6 +162,7 @@ const EyeIcon = styled.div`
 `;
 
 export default function Login({ dark, setDark }) {
+  const { t, language, setLanguage } = useLanguage();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -220,7 +223,7 @@ export default function Login({ dark, setDark }) {
         setError(result.error || "Login yoki parol xato");
       }
     } catch (err) {
-      setError("Server bilan aloqa xatosi");
+      setError(err.message || "Login yoki parol noto‘g‘ri.");
     } finally {
       setLoading(false);
     }
@@ -228,7 +231,7 @@ export default function Login({ dark, setDark }) {
 
   return (
     <Wrapper>
-      <Title>Tizimga Kirish</Title>
+      <Title>{t("login.title")}</Title>
 
       <Card>
         <CardHeader>
@@ -237,7 +240,7 @@ export default function Login({ dark, setDark }) {
 
         <LogoWrapper>
           <Logo src={dark ? lightlogo : darklogo} alt="Elektron Kundalik" />
-          <LogoText>ELEKTRON KUNDALIK</LogoText>
+          <LogoText>{t("login.subtitle")}</LogoText>
         </LogoWrapper>
 
         <form onSubmit={handleLogin}>
@@ -255,7 +258,7 @@ export default function Login({ dark, setDark }) {
           <Inputs>
             <Input
               type="text"
-              placeholder="Username"
+              placeholder={t("login.username")}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -264,7 +267,7 @@ export default function Login({ dark, setDark }) {
             <PasswordWrapper>
               <Input
                 type={showPassword ? "text" : "password"}
-                placeholder="Parol"
+                placeholder={t("login.password")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -278,7 +281,7 @@ export default function Login({ dark, setDark }) {
             </PasswordWrapper>
 
             <Button type="submit" disabled={loading}>
-              {loading ? "Kirilmoqda..." : "Kirish"}
+              {loading ? t("login.loading") : t("login.submit")}
             </Button>
           </Inputs>
         </form>

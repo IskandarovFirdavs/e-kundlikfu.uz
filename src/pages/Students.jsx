@@ -5,6 +5,7 @@ import { PiStudentBold } from "react-icons/pi";
 import { useNavigate, useParams } from "react-router-dom";
 import { FaUserGraduate, FaSchool } from "react-icons/fa";
 import api from "../services/api.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const DashboardContainer = styled.div`
   color: ${(p) => p.theme.text};
@@ -253,6 +254,7 @@ export default function Students({ isDark = false, onThemeChange }) {
 
   const theme = isDark ? darkTheme : lightTheme;
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState();
@@ -305,9 +307,9 @@ export default function Students({ isDark = false, onThemeChange }) {
   }, [groupId]);
 
   // render
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
-  if (!group) return <div className="p-4">No data</div>;
+  if (loading) return <div className="p-4">{t("catalog.loading")}</div>;
+  if (error) return <div className="p-4 text-red-600">{t("catalog.error")} {error}</div>;
+  if (!group) return <div className="p-4">{t("catalog.noData")}</div>;
 
   const groupNumber =
     group?.group_number ?? group?.students?.[0]?.group?.group_number ?? "";
@@ -318,7 +320,7 @@ export default function Students({ isDark = false, onThemeChange }) {
       <PracticeDaysSection>
         <HeaderRow>
           <SectionTitle>
-            {groupId ? `${group.group_number}` : groupNumber} guruh talabalari
+            {groupId ? `${group.group_number}` : groupNumber} {t("catalog.groupStudents")}
           </SectionTitle>
 
           <div
@@ -329,7 +331,7 @@ export default function Students({ isDark = false, onThemeChange }) {
               height: "100%",
             }}
           >
-            <Counter>{group.students?.length || 0} ta talaba</Counter>
+            <Counter>{group.students?.length || 0} {t("catalog.studentsCount")}</Counter>
           </div>
         </HeaderRow>
 
@@ -344,7 +346,7 @@ export default function Students({ isDark = false, onThemeChange }) {
             <FaUserGraduate
               style={{ fontSize: "48px", marginBottom: "16px" }}
             />
-            <p>Hozircha talabalar mavjud emas</p>
+            <p>{t("catalog.noStudents")}</p>
           </div>
         ) : (
           group.students.map((student) => (
@@ -357,7 +359,7 @@ export default function Students({ isDark = false, onThemeChange }) {
                   <CellContent>
                     <CellIconWrapper>
                       <PiStudentBold />
-                      <CellLabel>Talaba</CellLabel>
+                      <CellLabel>{t("catalog.student")}</CellLabel>
                     </CellIconWrapper>
                     <CellValue>
                       {student.first_name} {student.last_name}
