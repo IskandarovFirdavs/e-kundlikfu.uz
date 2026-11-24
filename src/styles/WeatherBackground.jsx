@@ -22,66 +22,11 @@ const AppWrapper = styled.div`
   flex-direction: column;
   margin: 0;
   padding: 0;
-  position: relative;
-  overflow-x: hidden;
-
-  /* Asosiy fon rangi */
-  background: ${({ $dark, theme }) =>
-    $dark ? theme.bg || "#0F172A" : theme.bg || "#ffffff"};
-
-  color: ${({ $dark, theme }) =>
-    $dark ? theme.text || "#F8FAFC" : theme.text || "#0F172A"};
-
+  background: ${(p) => p.theme.bg};
+  color: ${(p) => p.theme.text};
   transition:
-    background 0.5s ease,
+    background 0.3s ease,
     color 0.3s ease;
-
-  /* Suzib yuruvchi Ko'k Gradient */
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-
-    /* Light va Dark rejim uchun ranglar */
-    background-image:
-      radial-gradient(
-        circle at 20% 30%,
-        ${({ $dark }) =>
-            $dark ? "rgba(30, 58, 138, 0.6)" : "rgba(219, 234, 254, 0.8)"}
-          0%,
-        transparent 60%
-      ),
-      radial-gradient(
-        circle at 80% 70%,
-        ${({ $dark }) =>
-            $dark ? "rgba(59, 130, 246, 0.3)" : "rgba(191, 219, 254, 0.7)"}
-          0%,
-        transparent 60%
-      ),
-      radial-gradient(
-        circle at 50% 10%,
-        ${({ $dark }) =>
-            $dark ? "rgba(23, 37, 84, 0.8)" : "rgba(255, 255, 255, 0.9)"}
-          0%,
-        transparent 50%
-      );
-
-    background-size: 200% 200%;
-    /* 30 soniya davomida sekin va silliq suzadi */
-    animation: ${liquidMove} 30s ease-in-out infinite alternate;
-
-    /* Ko'zga tashlanmasligi uchun shaffoflik */
-    opacity: ${({ $dark }) => ($dark ? 0.9 : 1)};
-    transition: opacity 0.5s ease;
-  }
-
-  /* Ichidagi barcha kontent fondan yuqorida turishi uchun */
-  > * {
-    position: relative;
-    z-index: 1;
-  }
 `;
 
 export default function WeatherBackground({ children, dark = false }) {

@@ -15,7 +15,9 @@ const AppWrapper = styled.div`
   padding: 0;
   background: ${(p) => p.theme.bg};
   color: ${(p) => p.theme.text};
-  transition: background 0.3s ease, color 0.3s ease;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
   position: relative;
   overflow: hidden;
 

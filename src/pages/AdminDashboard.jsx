@@ -22,7 +22,6 @@ import {
   FaCheckCircle,
   FaExclamationCircle,
   FaEye,
-  FaFilter,
   FaSync,
   FaFileAlt,
   FaDownload,
@@ -35,11 +34,6 @@ import PracticeLocationPicker from "../components/PracticeLocationPicker.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
 // Animatsiyalar
-const gradientAnimation = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-`;
 const slideIn = keyframes`
   from { transform: translateY(-10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -54,7 +48,6 @@ const spin = keyframes`
 `;
 
 // --- STYLED COMPONENTS ---
-
 const DashboardContainer = styled.div`
   display: flex;
   min-height: calc(100vh - 80px);
@@ -80,11 +73,13 @@ const Sidebar = styled.div`
   backdrop-filter: blur(10px);
   border-right: 1px solid ${(p) => p.theme.border};
   padding: 24px 0;
-  position: absolute;
-  height: 100%;
+  position: sticky;
+  top: 0;
+  height: 100vh;
   overflow-y: auto;
   z-index: 100;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
 
   @media (max-width: 1024px) {
     width: 240px;
@@ -112,21 +107,15 @@ const Sidebar = styled.div`
 
 const MainContent = styled.div`
   flex: 1;
-  margin-left: 280px;
   padding: 32px;
-  max-width: calc(100vw - 280px);
-  z-index: -1;
+  z-index: 1;
 
   @media (max-width: 1024px) {
-    margin-left: 240px;
     padding: 24px;
-    max-width: calc(100vw - 240px);
   }
 
   @media (max-width: 768px) {
-    margin-left: 0;
     padding: 16px;
-    max-width: 100%;
   }
 
   @media (max-width: 480px) {
@@ -1079,10 +1068,9 @@ export default function AdminDashboard() {
   const navigate = (path) => {
     setActiveMenu(path.split("/").pop() || "users");
   };
+
   function parseWKTPoint(wkt) {
     if (!wkt) return null;
-
-    // GeoJSON obyekt
     if (typeof wkt === "object") {
       if (
         wkt.type === "Point" &&
@@ -1100,8 +1088,6 @@ export default function AdminDashboard() {
       }
       return null;
     }
-
-    // WKT matn
     if (typeof wkt === "string") {
       const match = wkt.match(
         /POINT\s*\(\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\)/i,
@@ -1109,9 +1095,9 @@ export default function AdminDashboard() {
       if (!match) return null;
       return [Number(match[2]), Number(match[1])];
     }
-
     return null;
   }
+
   const togglePasswordVisibility = (fieldName) => {
     setPasswordVisible((prev) => ({ ...prev, [fieldName]: !prev[fieldName] }));
   };
@@ -1279,7 +1265,6 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  // Xarita uchun onChange funksiyasini xotiraga olamiz (qayta-qayta yaratilmasligi uchun)
   const handleLocationChange = useCallback(({ location, address }) => {
     setFormData((prev) => ({
       ...prev,
@@ -1298,48 +1283,57 @@ export default function AdminDashboard() {
     setError(null);
     setSuccess(null);
 
+    let payload = { ...formData };
+    if (editingItem) {
+      Object.keys(editingItem).forEach((key) => {
+        if (payload[key] === undefined) {
+          payload[key] = editingItem[key];
+        }
+      });
+    }
+
     try {
       if (editingItem) {
         switch (activeMenu) {
           case "users":
-            await api.updateUser(editingItem.id, formData);
+            await api.updateUser(editingItem.id, payload);
             break;
           case "faculties":
-            await api.updateFaculty(editingItem.id, formData);
+            await api.updateFaculty(editingItem.id, payload);
             break;
           case "departments":
-            await api.updateDepartment(editingItem.id, formData);
+            await api.updateDepartment(editingItem.id, payload);
             break;
           case "directions":
-            await api.updateDirection(editingItem.id, formData);
+            await api.updateDirection(editingItem.id, payload);
             break;
           case "groups":
-            await api.updateGroup(editingItem.id, formData);
+            await api.updateGroup(editingItem.id, payload);
             break;
           case "practices":
-            await api.updatePracticeDay(editingItem.id, formData);
+            await api.updatePracticeDay(editingItem.id, payload);
             break;
         }
         setSuccess(`${getFormTemplate()?.title} muvaffaqiyatli yangilandi!`);
       } else {
         switch (activeMenu) {
           case "users":
-            await api.createUser(formData);
+            await api.createUser(payload);
             break;
           case "faculties":
-            await api.createFaculty(formData);
+            await api.createFaculty(payload);
             break;
           case "departments":
-            await api.createDepartment(formData);
+            await api.createDepartment(payload);
             break;
           case "directions":
-            await api.createDirection(formData);
+            await api.createDirection(payload);
             break;
           case "groups":
-            await api.createGroup(formData);
+            await api.createGroup(payload);
             break;
           case "practices":
-            await api.createPracticeDay(formData);
+            await api.createPracticeDay(payload);
             break;
         }
         setSuccess(`${getFormTemplate()?.title} muvaffaqiyatli yaratildi!`);
@@ -1400,30 +1394,27 @@ export default function AdminDashboard() {
     if (activeMenu === "reports") return;
     setEditingItem(item);
 
-    // Nested obyektlarni tozalash (Edit rejimida select ishlashi uchun)
-    const sanitizedData = { ...item };
-    const foreignKeys = [
-      "student",
-      "group",
-      "attached_teacher",
-      "faculty_id",
-      "department_id",
-      "direction_id",
-      "head_id",
-      "vice_id",
-    ];
+    // ✅ Barcha bog'langan ma'lumotlarni to'g'ri ajratib olish (ID ni topish)
+    const sanitizedData = JSON.parse(JSON.stringify(item));
 
-    foreignKeys.forEach((key) => {
-      if (
-        sanitizedData[key] &&
-        typeof sanitizedData[key] === "object" &&
-        sanitizedData[key].id
-      ) {
-        sanitizedData[key] = sanitizedData[key].id;
-      }
-    });
+    const getVal = (obj, key) => {
+      if (obj[`${key}_id`]) return obj[`${key}_id`];
+      if (obj[key] && typeof obj[key] === "object" && obj[key].id)
+        return obj[key].id;
+      if (obj[key] && typeof obj[key] !== "object") return obj[key];
+      return "";
+    };
 
-    setFormData(JSON.parse(JSON.stringify(sanitizedData)));
+    sanitizedData.head_id = getVal(item, "head");
+    sanitizedData.vice_id = getVal(item, "vice");
+    sanitizedData.faculty_id = getVal(item, "faculty");
+    sanitizedData.department_id = getVal(item, "department");
+    sanitizedData.direction_id = getVal(item, "direction");
+    sanitizedData.group = getVal(item, "group");
+    sanitizedData.attached_teacher = getVal(item, "attached_teacher");
+    sanitizedData.student = getVal(item, "student");
+
+    setFormData(sanitizedData);
     setShowModal(true);
   };
 
@@ -1469,44 +1460,55 @@ export default function AdminDashboard() {
     return templates[activeMenu] || templates.users;
   };
 
+  // ✅ JADVAL UCHUN BARCHA BOG'LANGAN MA'LUMOTLARNI O'QISH
   function getForeignKeyDisplay(item, key) {
-    switch (key) {
-      case "student":
-      case "student_data":
-        return item.student_data
-          ? `${item.student_data.first_name ?? ""} ${item.student_data.last_name ?? ""}`.trim() ||
-              "-"
-          : "-";
-      case "faculty_id":
-        return item.faculty?.name || "-";
-      case "department_id":
-        return item.department?.name || "-";
-      case "direction_id":
-        return item.direction?.name || "-";
-      case "head_id":
-        return item.head?.first_name
-          ? `${item.head.first_name} ${item.head.last_name}`
-          : "-";
-      case "vice_id":
-        return item.vice?.first_name
-          ? `${item.vice.first_name} ${item.vice.last_name}`
-          : "-";
-      case "attached_teacher":
-        return item.attached_teacher?.first_name
-          ? `${item.attached_teacher.first_name} ${item.attached_teacher.last_name}`
-          : "-";
-      case "group":
-      case "group_data":
-        return item.group?.group_number || item.group_data?.group_number || "-";
-      case "teacher":
-      case "teacher_data":
-        return item.teacher_data
-          ? `${item.teacher_data.first_name ?? ""} ${item.teacher_data.last_name ?? ""}`.trim() ||
-              "-"
-          : "-";
-      default:
-        return "-";
+    const extractName = (obj) => {
+      if (!obj) return null;
+      if (obj.name) return obj.name;
+      if (obj.group_number) return obj.group_number;
+      if (obj.first_name || obj.last_name) {
+        return `${obj.first_name || ""} ${obj.last_name || ""}`.trim();
+      }
+      if (obj.username) return obj.username;
+      return null;
+    };
+
+    // 1. Object sifatida kelgan bo'lsa (masalan, item.head = { id: 4, first_name: '...' })
+    const actualKey = key.replace("_id", ""); // head_id -> head
+    if (item[actualKey] && typeof item[actualKey] === "object") {
+      const res = extractName(item[actualKey]);
+      if (res) return res;
     }
+    if (item[key] && typeof item[key] === "object") {
+      const res = extractName(item[key]);
+      if (res) return res;
+    }
+
+    // 2. _data bilan kelgan bo'lsa
+    if (
+      item[`${actualKey}_data`] &&
+      typeof item[`${actualKey}_data`] === "object"
+    ) {
+      const res = extractName(item[`${actualKey}_data`]);
+      if (res) return res;
+    }
+
+    // 3. relatedData (users, faculties, va hokazo) ichidan ID orqali izlash
+    const id = item[key] || item[actualKey] || item[`${actualKey}_id`];
+    if (!id) return "-";
+
+    if (relatedData.users && relatedData.users[id])
+      return extractName(relatedData.users[id]);
+    if (relatedData.faculties && relatedData.faculties[id])
+      return extractName(relatedData.faculties[id]);
+    if (relatedData.departments && relatedData.departments[id])
+      return extractName(relatedData.departments[id]);
+    if (relatedData.directions && relatedData.directions[id])
+      return extractName(relatedData.directions[id]);
+    if (relatedData.groups && relatedData.groups[id])
+      return extractName(relatedData.groups[id]);
+
+    return "-";
   }
 
   const filteredData = useMemo(() => {
@@ -1626,26 +1628,25 @@ export default function AdminDashboard() {
     return baseColumns[activeMenu] || baseColumns.users;
   };
 
+  // ✅ EDIT UCHUN SELECT OPTIONLAR
   const getFormFields = () => {
     const userOptions = Object.values(relatedData.users || {})
       .filter((u) => u && u.id && u.first_name)
       .map((u) => ({
         value: u.id,
         label: `${u.first_name} ${u.last_name}`.trim(),
-        role: u.role,
+        role: String(u.role).toLowerCase(), // Case insensitive
       }));
-    const teacherOptions = Object.values(relatedData.users || {})
-      .filter((u) => u && u.id && u.role === "teacher")
-      .map((u) => ({
-        value: u.id,
-        label: `${u.first_name} ${u.last_name}`.trim(),
-      }));
-    const studentOptions = Object.values(relatedData.users || {})
-      .filter((u) => u && u.id && u.role === "student")
-      .map((u) => ({
-        value: u.id,
-        label: `${u.first_name} ${u.last_name}`.trim(),
-      }));
+    const teacherOptions = userOptions.filter((u) => u.role === "teacher");
+    const studentOptions = userOptions.filter((u) => u.role === "student");
+    const deanOptions = userOptions.filter((u) => u.role === "dean");
+    const deputyDeanOptions = userOptions.filter(
+      (u) => u.role === "deputy_dean",
+    );
+    const headOptions = userOptions.filter(
+      (u) => u.role === "head_of_department",
+    );
+
     const facultyOptions = Object.values(relatedData.faculties || {})
       .filter((f) => f && f.id)
       .map((f) => ({ value: f.id, label: f.name }));
@@ -1682,7 +1683,7 @@ export default function AdminDashboard() {
             { value: "student", label: "Talaba" },
           ],
         },
-        ...(formData?.role === "student"
+        ...(String(formData?.role || "").toLowerCase() === "student"
           ? [
               {
                 name: "attached_teacher",
@@ -1705,7 +1706,7 @@ export default function AdminDashboard() {
           label: "Password",
           type: "password",
           placeholder: "password",
-          required: true,
+          required: !editingItem,
         },
       ].filter(Boolean),
       faculties: [
@@ -1715,14 +1716,14 @@ export default function AdminDashboard() {
           label: "Dekan",
           type: "select",
           required: true,
-          options: userOptions.filter((u) => u.role === "dean"),
+          options: deanOptions,
         },
         {
           name: "vice_id",
           label: "Zam dekan",
           type: "select",
           required: false,
-          options: userOptions.filter((u) => u.role === "deputy_dean"),
+          options: deputyDeanOptions,
         },
       ],
       departments: [
@@ -1740,7 +1741,7 @@ export default function AdminDashboard() {
           label: "Kafedra mudiri",
           type: "select",
           required: true,
-          options: userOptions.filter((u) => u.role === "head_of_department"),
+          options: headOptions,
         },
       ],
       directions: [
@@ -1834,15 +1835,23 @@ export default function AdminDashboard() {
     if (!status) return <StatusBadge className="inactive">-</StatusBadge>;
     const s = String(status).toLowerCase();
     let cls = "inactive";
-    if (s === "success") cls = "approved";
-    else if (s === "rejected") cls = "rejected";
-    else if (s === "pending") cls = "submitted";
-    else if (s === "active") cls = "active";
-    return (
-      <StatusBadge className={cls}>
-        {s.charAt(0).toUpperCase() + s.slice(1)}
-      </StatusBadge>
-    );
+    let text = status;
+
+    if (s === "success" || s === "approved") {
+      cls = "approved";
+      text = t("admin.approved") || "Tasdiqlangan";
+    } else if (s === "rejected") {
+      cls = "rejected";
+      text = t("admin.rejected") || "Rad etilgan";
+    } else if (s === "pending") {
+      cls = "submitted";
+      text = t("admin.pending") || "Kutilmoqda";
+    } else if (s === "active") {
+      cls = "active";
+      text = t("admin.active") || "Faol";
+    }
+
+    return <StatusBadge className={cls}>{text}</StatusBadge>;
   };
 
   const renderStatusBadge = (status) => {
@@ -1900,8 +1909,7 @@ export default function AdminDashboard() {
             return (
               <FormGroupWrapper key={field.name}>
                 <FormLabel htmlFor={field.name}>
-                  {field.label}
-                  {field.required && " *"}
+                  {field.label} {field.required && "*"}
                 </FormLabel>
                 <div style={{ position: "relative" }}>
                   <FormInput
@@ -1942,14 +1950,13 @@ export default function AdminDashboard() {
           return (
             <FormGroup key={field.name}>
               <FormLabel htmlFor={field.name}>
-                {field.label}
-                {field.required && " *"}
+                {field.label} {field.required && "*"}
               </FormLabel>
               {field.type === "select" ? (
                 <FormSelect
                   id={field.name}
                   name={field.name}
-                  value={formData[field.name] || ""}
+                  value={String(formData[field.name] || "")}
                   onChange={handleInputChange}
                   required={field.required}
                   disabled={
@@ -1963,7 +1970,7 @@ export default function AdminDashboard() {
                       : `${field.label}ni tanlang`}
                   </option>
                   {field.options?.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <option key={option.value} value={String(option.value)}>
                       {option.label}
                     </option>
                   ))}
@@ -2020,8 +2027,7 @@ export default function AdminDashboard() {
               </>
             ) : (
               <>
-                <FaSave />
-                {editingItem ? t("admin.update") : t("admin.create")}
+                <FaSave /> {editingItem ? t("admin.update") : t("admin.create")}
               </>
             )}
           </ActionButton>
@@ -2093,18 +2099,23 @@ export default function AdminDashboard() {
               {position ? (
                 <div
                   style={{
-                    height: "200px",
+                    height: "250px",
                     width: "100%",
                     borderRadius: "6px",
-                    background: "#f0f0f0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#999",
-                    fontSize: "14px",
+                    overflow: "hidden",
+                    border: "1px solid #ddd",
                   }}
                 >
-                  Map: {position[0].toFixed(4)}, {position[1].toFixed(4)}
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    scrolling="no"
+                    marginHeight="0"
+                    marginWidth="0"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${position[1] - 0.003}%2C${position[0] - 0.003}%2C${position[1] + 0.003}%2C${position[0] + 0.003}&layer=mapnik&marker=${position[0]}%2C${position[1]}`}
+                    style={{ border: 0 }}
+                  ></iframe>
                 </div>
               ) : (
                 <ReportValue>N/A</ReportValue>
@@ -2316,6 +2327,7 @@ export default function AdminDashboard() {
                             ) : (
                               (() => {
                                 const value = item[column.key];
+                                // ✅ Barcha foreign key larni va obyektlarni to'g'ri chiqarish
                                 if (
                                   [
                                     "faculty_id",
@@ -2324,11 +2336,14 @@ export default function AdminDashboard() {
                                     "head_id",
                                     "vice_id",
                                     "attached_teacher",
+                                    "student",
                                     "student_id",
+                                    "group",
                                     "group_id",
                                   ].includes(column.key)
-                                )
+                                ) {
                                   return getForeignKeyDisplay(item, column.key);
+                                }
                                 if (
                                   typeof value === "object" &&
                                   value !== null
