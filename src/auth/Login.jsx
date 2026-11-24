@@ -1,34 +1,34 @@
 import React, { useEffect, useState } from "react";
-import styled from "styled-components";
-import { useRive } from "@rive-app/react-canvas";
+import styled, { useTheme } from "styled-components";
+import darklogo from "../../public/darklogo.png";
+import lightlogo from "../../public/logog.png";
 import { useNavigate } from "react-router-dom";
+import icon from "../../public/seticon.png";
+import darkicon from "../../public/Group.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext"; // AuthContext'ni import qilamiz
 import { useLanguage } from "../context/LanguageContext.jsx";
 
-const darklogo = "/darklogo.png";
-const lightlogo = "/logog.png";
-const icon = "/seticon.png";
-const darkicon = "/Group.png";
-
-// WRAPPER
+// --- WRAPPER ---
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  height: 100vh;
   transition: 0.3s ease;
 
   @media (max-width: 600px) {
     padding: 20px;
+    height: auto;
   }
 `;
 
+// --- TITLE ---
 const Title = styled.h1`
   font-size: 32px;
   color: ${(p) => p.theme.cardTitle};
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   transition: 0.3s ease;
 
   @media (max-width: 600px) {
@@ -36,12 +36,7 @@ const Title = styled.h1`
   }
 `;
 
-const TeddyWrapper = styled.div`
-  width: 220px;
-  height: 180px;
-  margin: 0 auto -15px auto;
-`;
-
+// --- CARD ---
 const Card = styled.div`
   background: ${(p) => p.theme.cardBg};
   width: 450px;
@@ -50,7 +45,7 @@ const Card = styled.div`
   box-shadow: 0px 2px 14px ${(p) => p.theme.cardShadow};
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 25px;
   transition: 0.3s ease;
 
   @media (max-width: 600px) {
@@ -59,26 +54,15 @@ const Card = styled.div`
   }
 `;
 
+// --- CARD HEADER ---
 const CardHeader = styled.div`
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: right;
 `;
 
-const Credit = styled.a`
-  font-size: 10px;
-  color: ${(p) => p.theme.text};
-  opacity: 0.4;
-  text-decoration: none;
-  transition: opacity 0.2s ease;
-
-  &:hover {
-    opacity: 0.85;
-    text-decoration: underline;
-  }
-`;
-
+// --- LOGO BLOCK ---
 const LogoWrapper = styled.div`
   text-align: center;
   margin-top: -10px;
@@ -87,16 +71,26 @@ const LogoWrapper = styled.div`
 const Logo = styled.img`
   width: 100px;
   height: 45px;
-  object-fit: contain;
+
+  @media (max-width: 600px) {
+    width: 100px;
+    height: 40px;
+    object-fit: contain;
+  }
 `;
 
 const LogoText = styled.div`
-  margin-top: 8px;
+  margin-top: 10px;
   font-weight: bold;
   font-size: 18px;
   color: ${(p) => p.theme.text};
+
+  @media (max-width: 600px) {
+    font-size: 16px;
+  }
 `;
 
+// --- FORM ---
 const Inputs = styled.div`
   width: 100%;
   display: flex;
@@ -113,9 +107,11 @@ const Input = styled.input`
   border: 1px solid ${(p) => p.theme.inputBorder};
   color: ${(p) => p.theme.inputText};
   transition: 0.3s ease;
+  border-color: ${(props) =>
+    props.hasError ? "#ef4444" : (p) => p.theme.inputBorder};
 
   &:focus {
-    border-color: #007bff;
+    border-color: ${(props) => (props.hasError ? "#ef4444" : "#007bff")};
     outline: none;
   }
 `;
@@ -130,17 +126,24 @@ const Button = styled.button`
   border-radius: 6px;
   cursor: pointer;
   transition: 0.3s ease;
-  opacity: ${(props) => (props.disabled ? 0.7 : 1)};
+  opacity: ${(props) => (props.loading ? 0.7 : 1)};
+  pointer-events: ${(props) => (props.loading ? "none" : "all")};
 
   &:hover {
     background: ${(p) => p.theme.buttonHover};
   }
 `;
 
+// --- TOGGLE ICON ---
 const Toggle = styled.img`
   width: 26px;
   height: 26px;
   cursor: pointer;
+  transition: 0.3s;
+
+  &:hover {
+    opacity: 0.7;
+  }
 `;
 
 const PasswordWrapper = styled.div`
@@ -151,53 +154,34 @@ const PasswordWrapper = styled.div`
 const EyeIcon = styled.div`
   position: absolute;
   right: 12px;
-  top: 50%;
+  top: 55%;
   transform: translateY(-50%);
   cursor: pointer;
   color: ${(p) => p.theme.inputText};
   font-size: 20px;
-  display: flex;
-  align-items: center;
 `;
 
 export default function Login({ dark, setDark }) {
-  const { t } = useLanguage();
-  const navigate = useNavigate();
-  const { login, user } = useAuth();
-
+  const { t, language, setLanguage } = useLanguage();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
-  // RIVE HOOK
-  const { rive, RiveComponent } = useRive({
-    src: "/teddy.riv",
-    autoplay: true,
-    animations: "idle",
-  });
+  const navigate = useNavigate();
+  const { login, user } = useAuth(); // AuthContext'dan login funksiyasini olamiz
 
-  // PAROL KREATSION VA KO'ZCHANI BOSGANDA ANIMATSIYANI BOSHQARISH
   useEffect(() => {
-    if (!rive) return;
-
-    // Agar parolni ko'rsatish (showPassword) yoqilgan bo'lsa,
-    //yoki parol inputida fokus bo'lsa -> ayiqcha ko'zini yopadi (hands_up)
-    if (showPassword || isPasswordFocused) {
-      rive.play("hands_up");
-    } else {
-      // Aks holda ko'zini ochadi (hands_down)
-      rive.play("hands_down");
+    // Agar user allaqachon login qilgan bo'lsa, uni tegishli sahifaga yo'naltiramiz
+    if (user) {
+      redirectBasedOnRole(user.role);
     }
-  }, [rive, isPasswordFocused, showPassword]);
+  }, [user, navigate]);
 
-  // ROLE REDIRECT
-  useEffect(() => {
-    if (!user) return;
-
-    switch (user.role) {
+  // Role bo'yicha yo'naltirish funksiyasi
+  const redirectBasedOnRole = (role) => {
+    switch (role) {
       case "super_user":
       case "admin":
         navigate("/admin/dashboard");
@@ -220,28 +204,25 @@ export default function Login({ dark, setDark }) {
         break;
       default:
         navigate("/");
+        break;
     }
-  }, [user, navigate]);
+  };
 
-  // LOGIN
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    setIsPasswordFocused(false);
-    setShowPassword(false);
 
     try {
+      // AuthContext'dagi login funksiyasini chaqiramiz
       const result = await login(username, password);
 
       if (result.success) {
-        if (rive) rive.play("success");
+        // AuthContext user'ni o'zi o'rnatadi, useEffect orqali redirect qilinadi
       } else {
-        if (rive) rive.play("fail");
         setError(result.error || "Login yoki parol xato");
       }
     } catch (err) {
-      if (rive) rive.play("fail");
       setError(err.message || "Login yoki parol noto‘g‘ri.");
     } finally {
       setLoading(false);
@@ -254,16 +235,8 @@ export default function Login({ dark, setDark }) {
 
       <Card>
         <CardHeader>
-          <Credit href="https://rive.app" target="_blank" rel="noreferrer">
-            Anim: naresh.keyconcepts / JcToon (CC BY)
-          </Credit>
-
           <Toggle src={dark ? icon : darkicon} onClick={() => setDark(!dark)} />
         </CardHeader>
-
-        <TeddyWrapper>
-          <RiveComponent />
-        </TeddyWrapper>
 
         <LogoWrapper>
           <Logo src={dark ? lightlogo : darklogo} alt="Elektron Kundalik" />
@@ -272,42 +245,37 @@ export default function Login({ dark, setDark }) {
 
         <form onSubmit={handleLogin}>
           {error && (
-            <p style={{ color: "#ef4444", textAlign: "center", marginBottom: "15px" }}>
+            <p
+              style={{
+                color: "#ef4444",
+                textAlign: "center",
+                marginBottom: "15px",
+              }}
+            >
               {error}
             </p>
           )}
-
           <Inputs>
             <Input
               type="text"
               placeholder={t("login.username")}
               value={username}
-              onFocus={() => {
-                setIsPasswordFocused(false);
-                if (rive) rive.play("look_idle");
-              }}
               onChange={(e) => setUsername(e.target.value)}
               required
               disabled={loading}
             />
-
             <PasswordWrapper>
               <Input
                 type={showPassword ? "text" : "password"}
                 placeholder={t("login.password")}
                 value={password}
-                onFocus={() => setIsPasswordFocused(true)}
-                onBlur={() => setIsPasswordFocused(false)}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
                 style={{ paddingRight: "45px" }}
               />
 
-              <EyeIcon
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setShowPassword((prev) => !prev)}
-              >
+              <EyeIcon onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </EyeIcon>
             </PasswordWrapper>
